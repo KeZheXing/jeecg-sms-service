@@ -437,7 +437,8 @@ public class SysTenantController {
                                                     HttpServletRequest req) {
         Result<IPage<SysUser>> result = new Result<>();
         Page<SysUser> page = new Page<>(pageNo, pageSize);
-        Page<SysUser> pageList = relationService.getPageUserList(page,Integer.valueOf(userTenantId),user);
+        userTenantId = null;
+        Page<SysUser> pageList = relationService.getPageUserList(page,null,user);
         result.setSuccess(true);
         result.setResult(pageList);
         return result;

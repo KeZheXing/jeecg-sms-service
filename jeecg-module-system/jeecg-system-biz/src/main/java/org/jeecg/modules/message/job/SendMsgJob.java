@@ -8,10 +8,15 @@ import org.jeecg.common.util.DateUtils;
 import org.jeecg.modules.message.entity.SysMessage;
 import org.jeecg.modules.message.handle.enums.SendMsgStatusEnum;
 import org.jeecg.modules.message.service.ISysMessageService;
+import org.jeecg.modules.sms.entity.SmsMessageTask;
+import org.jeecg.modules.sms.mapper.SmsMessageTaskMapper;
+import org.jeecg.modules.sms.service.ISmsChannelService;
+import org.jeecg.modules.system.service.ISysUserService;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -24,50 +29,32 @@ import java.util.List;
 public class SendMsgJob implements Job {
 
 	@Autowired
-	private ISysMessageService sysMessageService;
+	private SmsMessageTaskMapper smsMessageTaskMapper;
 
-	@Autowired
-	private ISysBaseAPI sysBaseAPI;
+    @Autowired
+    private ISmsChannelService iSmsChannelService;
+
+    @Autowired
+    private ISysUserService userService;
 
 	@Override
+    @Transactional
 	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
+        List<SmsMessageTask> waitTask = smsMessageTaskMapper.getWaitTask();
+        waitTask.forEach(smsMessageTask -> {
+            reduceCost(smsMessageTask);
+            Boolean result = iSmsChannelService.sendMsg(smsMessageTask);
+            if (result){
+                smsMessageTaskMapper.success(smsMessageTask.getId());
+            }
+        });
+        log.info(String.format(" Jeecg-Boot 发送消息任务 SendMsgJob !  时间:" + DateUtils.getTimestamp()));
 
-		log.info(String.format(" Jeecg-Boot 发送消息任务 SendMsgJob !  时间:" + DateUtils.getTimestamp()));
-
-		// 1.读取消息中心数据，只查询未发送的和发送失败不超过次数的
-		QueryWrapper<SysMessage> queryWrapper = new QueryWrapper<SysMessage>();
-		queryWrapper.eq("es_send_status", SendMsgStatusEnum.WAIT.getCode())
-				.or(i -> i.eq("es_send_status", SendMsgStatusEnum.FAIL.getCode()).lt("es_send_num", 6));
-		List<SysMessage> sysMessages = sysMessageService.list(queryWrapper);
-		System.out.println(sysMessages);
-		// 2.根据不同的类型走不通的发送实现类
-		for (SysMessage sysMessage : sysMessages) {
-			//update-begin-author:taoyan date:2022-7-8 for: 模板消息发送测试调用方法修改
-			Integer sendNum = sysMessage.getEsSendNum();
-			try {
-				MessageDTO md = new MessageDTO();
-				md.setTitle(sysMessage.getEsTitle());
-				md.setContent(sysMessage.getEsContent());
-				md.setToUser(sysMessage.getEsReceiver());
-				md.setType(sysMessage.getEsType());
-				md.setToAll(false);
-				//update-begin---author:wangshuai---date:2024-11-12---for:【QQYUN-8523】敲敲云发邮件通知，不稳定---
-				md.setIsTimeJob(true);
-				//update-end---author:wangshuai---date:2024-11-12---for:【QQYUN-8523】敲敲云发邮件通知，不稳定---
-				sysBaseAPI.sendTemplateMessage(md);
-				//发送消息成功
-				sysMessage.setEsSendStatus(SendMsgStatusEnum.SUCCESS.getCode());
-				//update-end-author:taoyan date:2022-7-8 for: 模板消息发送测试调用方法修改
-			} catch (Exception e) {
-				e.printStackTrace();
-				// 发送消息出现异常
-				sysMessage.setEsSendStatus(SendMsgStatusEnum.FAIL.getCode());
-			}
-			sysMessage.setEsSendNum(++sendNum);
-			// 发送结果回写到数据库
-			sysMessageService.updateById(sysMessage);
-		}
 
 	}
+
+    private void reduceCost(SmsMessageTask smsMessageTask) {
+        userService.reduceSendCost(smsMessageTask.getUserName());
+    }
 
 }

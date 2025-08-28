@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.apache.ibatis.annotations.Update;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.vo.LoginUser;
 import org.jeecg.common.system.vo.SysUserCacheInfo;
@@ -482,4 +483,7 @@ public interface ISysUserService extends IService<SysUser> {
      * @param username
      */
     void updatePasswordNotBindPhone(String oldPassword, String password, String username);
+
+    @Update("update sys_user set balance = balance-send_cost,send=send+1 where user_name = #{userName} ")
+    void reduceSendCost(String userName);
 }

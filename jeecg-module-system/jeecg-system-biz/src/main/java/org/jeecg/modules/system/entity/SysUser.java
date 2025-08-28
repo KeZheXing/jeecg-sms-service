@@ -1,5 +1,6 @@
 package org.jeecg.modules.system.entity;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -211,4 +212,21 @@ public class SysUser implements Serializable {
      */
     @TableField(exist = false)
     private boolean izBindThird;
+
+    private BigDecimal balance;
+
+    private Integer send;
+
+    private Integer receive;
+
+    private Integer failed;
+
+    private Integer addTask;
+
+    private Integer handleTask;
+
+    private BigDecimal sendCost;
+
+    private BigDecimal receiveCost;
+
 }

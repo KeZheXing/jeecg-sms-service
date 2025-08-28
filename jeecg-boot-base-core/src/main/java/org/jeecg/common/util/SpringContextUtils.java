@@ -10,6 +10,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -44,7 +45,11 @@ public class SpringContextUtils implements ApplicationContextAware {
 	  * 获取HttpServletRequest
 	 */
 	public static HttpServletRequest getHttpServletRequest() {
-		return ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        if (requestAttributes==null){
+            return null;
+        }
+        return ((ServletRequestAttributes) requestAttributes).getRequest();
 	}
 	/**
 	 * 获取HttpServletResponse

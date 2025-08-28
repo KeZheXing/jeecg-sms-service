@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -94,7 +95,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
         ChatConversation chatConversation = getOrCreateChatConversation(app, conversationId);
         // 更新标题
         if (oConvertUtils.isEmpty(chatConversation.getTitle())) {
-            chatConversation.setTitle(chatSendParams.getConversationId().split(":")[1]);
+            chatConversation.setTitle(chatSendParams.getConversationId());
         }
         // 发送消息
         return doChat(chatConversation, topicId, chatSendParams);
@@ -171,44 +172,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
         if (oConvertUtils.isEmpty(appId)) {
             appId = AiAppConsts.DEFAULT_APP_ID;
         }
-
-        conversationRecordsMapper.list(getUsername(SpringContextUtils.getHttpServletRequest()));
-
-        // 遍历键集合，获取对应的 ChatConversation 对象
-        List<ChatConversation> conversations = new ArrayList<>();
-        for (Object k : keys) {
-            ChatConversation conversation = (ChatConversation) redisTemplate.boundValueOps(k).get();
-
-            if (conversation != null) {
-                AiragApp app = conversation.getApp();
-                if (null == app) {
-                    continue;
-                }
-                String conversationAppId = app.getId();
-                if (appId.equals(conversationAppId)) {
-                    conversation.setApp(null);
-                    conversation.setMessages(null);
-                    conversations.add(conversation);
-                }
-            }
-        }
-
-        // 对会话列表按创建时间降序排序
-        conversations.sort((o1, o2) -> {
-            Date date1 = o1.getCreateTime();
-            Date date2 = o2.getCreateTime();
-            if (date1 == null && date2 == null) {
-                return 0;
-            }
-            if (date1 == null) {
-                return 1;
-            }
-            if (date2 == null) {
-                return -1;
-            }
-            return date2.compareTo(date1);
-        });
-
+        List<ChatConversation> conversations = conversationRecordsMapper.list(getUsername(SpringContextUtils.getHttpServletRequest()));
         // 返回结果
         return Result.ok(conversations);
     }
@@ -260,7 +224,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
         }
         ChatConversation chatConversation = getOrCreateChatConversation(app, conversationId);
         chatConversation.setHasReply(true);
-        chatConversation.setTitle(chatConversation.getIsCreate()?chatReplyParams.getFrom():chatConversation.getTitle());
+        chatConversation.setTitle(Boolean.TRUE.equals(chatConversation.getIsCreate())?conversationId:chatConversation.getTitle());
         chatReplyParams.setIsReply(true);
         // 发送消息
         SseEmitter a = doChat(chatConversation, "A", chatReplyParams);
@@ -272,12 +236,8 @@ public class AiragChatServiceImpl implements IAiragChatService {
         AssertUtils.assertNotEmpty("请选择要删除的会话", conversationId);
         String key = getConversationCacheKey(conversationId, null);
         if (oConvertUtils.isNotEmpty(key)) {
-            Boolean delete = redisTemplate.delete(key);
-            if (delete) {
-                return Result.ok();
-            } else {
-                return Result.error("删除会话失败");
-            }
+            conversationRecordsMapper.deleteByKey(key);
+            return Result.ok();
         }
         log.warn("[ai-chat]删除会话:未找到会话:{}", conversationId);
         return Result.ok();
@@ -352,7 +312,8 @@ public class AiragChatServiceImpl implements IAiragChatService {
      * @date 2025/2/25 19:19
      */
     @NotNull
-    private ChatConversation getOrCreateChatConversation(AiragApp app, String conversationId) {
+    @Transactional
+    public ChatConversation getOrCreateChatConversation(AiragApp app, String conversationId) {
         if (oConvertUtils.isObjectEmpty(app)) {
             app = new AiragApp();
             app.setId(AiAppConsts.DEFAULT_APP_ID);
@@ -426,7 +387,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
             conversationRecordsMapper.updateTitle(chatRecord.getId(),chatConversation.getTitle());
         }
         if (hasAddMessage(chatConversation)) {
-            chatConversation.getMessages().stream().filter(e->e.getAddMessage()).forEach(data->{
+            chatConversation.getMessages().stream().filter(e->Boolean.TRUE.equals(e.getAddMessage())).forEach(data->{
                 conversationMessageRecordsMapper.add(data);
             });
         }
@@ -439,7 +400,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
     }
 
     private boolean hasAddMessage(ChatConversation chatConversation) {
-        return chatConversation.getMessages().stream().anyMatch(ConversationMessageRecords::getAddMessage);
+        return chatConversation.getMessages().stream().anyMatch(e->Boolean.TRUE.equals(e.getAddMessage()));
     }
 
     /**
@@ -856,7 +817,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
         EventData eventDataEnd = new EventData(requestId, null, EventData.EVENT_MESSAGE_END, chatConversation.getId(), topicId);
         appendMessage(messages, resp, chatConversation, topicId);
         // 保存会话
-        saveChatConversation(chatConversation, false, SpringContextUtils.getHttpServletRequest());
+//        saveChatConversation(chatConversation, false, SpringContextUtils.getHttpServletRequest());
         closeSSE(emitter, eventDataEnd);
     }
 
@@ -962,6 +923,9 @@ public class AiragChatServiceImpl implements IAiragChatService {
      */
     private String getUsername(HttpServletRequest httpRequest) {
         try {
+            if (TokenUtils.tempUser.get()!=null){
+                return TokenUtils.tempUser.get();
+            }
             TokenUtils.getTokenByRequest();
             String token;
             if (null != httpRequest) {

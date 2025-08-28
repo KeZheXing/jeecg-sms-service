@@ -119,6 +119,12 @@ public class JeecgBootExceptionHandler {
 		return Result.noauth("没有权限，请联系管理员分配权限！");
 	}
 
+    @ExceptionHandler({JeecgBootAssertException.class})
+    public Result<?> handleAuthorizationException(JeecgBootAssertException e){
+        log.error(e.getMessage(), e);
+        return Result.error(String.format("操作失败[%s]",  e.getMessage()));
+    }
+
 	@ExceptionHandler(Exception.class)
 	public Result<?> handleException(Exception e){
 		log.error(e.getMessage(), e);

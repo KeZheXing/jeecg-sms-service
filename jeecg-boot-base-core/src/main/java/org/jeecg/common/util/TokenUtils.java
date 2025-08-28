@@ -21,6 +21,8 @@ import javax.servlet.http.HttpServletRequest;
 @Slf4j
 public class TokenUtils {
 
+    public static ThreadLocal<String> tempUser = new ThreadLocal<>();
+
     /**
      * 获取 request 里传递的 token
      *
