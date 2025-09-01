@@ -1,4 +1,4 @@
-package org.jeecg.modules.airag.app.controller;
+package org.jeecg.modules.sms.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
@@ -8,6 +8,7 @@ import org.jeecg.config.shiro.IgnoreAuth;
 import org.jeecg.modules.airag.app.service.IAiragChatService;
 import org.jeecg.modules.airag.app.vo.ChatConversation;
 import org.jeecg.modules.airag.app.vo.ChatSendParams;
+import org.jeecg.modules.system.service.ISysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -42,6 +43,9 @@ public class AiragChatController {
     @Value(value="${jeecg.uploadType}")
     private String uploadType;
 
+    @Autowired
+    private ISysUserService userService;
+
 
     /**
      * 发送消息
@@ -53,7 +57,8 @@ public class AiragChatController {
     @IgnoreAuth
     @PostMapping(value = "/send")
     public SseEmitter send(@RequestBody ChatSendParams chatSendParams) {
-        return chatService.send(chatSendParams);
+
+        return userService.send(chatSendParams);
     }
 
     /**

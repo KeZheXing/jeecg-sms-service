@@ -38,6 +38,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.telegram</groupId>
+            <artifactId>telegrambots</artifactId>
+            <version>6.9.7.1</version>
+        </dependency>
         <!-- system单体 api-->
         <dependency>
             <groupId>org.jeecgframework.boot</groupId>

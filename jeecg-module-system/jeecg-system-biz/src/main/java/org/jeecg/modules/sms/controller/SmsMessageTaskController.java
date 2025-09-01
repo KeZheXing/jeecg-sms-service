@@ -7,15 +7,17 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
-import org.jeecg.modules.sms.entity.SmsDevice;
-import org.jeecg.modules.sms.entity.SmsMessageTask;
+import org.jeecg.modules.airag.app.entity.SmsDevice;
+import org.jeecg.modules.airag.app.entity.SmsMessageTask;
+import org.jeecg.modules.message.entity.SmsMessageTemplate;
+import org.jeecg.modules.message.entity.SysMessageTemplate;
 import org.jeecg.modules.sms.entity.vo.SmsMessageTaskAddVO;
-import org.jeecg.modules.sms.service.IDeviceService;
 import org.jeecg.modules.sms.service.ISmsMessageTaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @Author: KKKKK
@@ -31,7 +33,7 @@ public class SmsMessageTaskController {
 
     @RequestMapping(value = "/listAll", method = RequestMethod.GET)
     public Result<IPage<SmsMessageTask>> queryAllPageList(SmsMessageTask user, @RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
-                                                   @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, HttpServletRequest req) {
+                                                          @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, HttpServletRequest req) {
         QueryWrapper<SmsMessageTask> queryWrapper = QueryGenerator.initQueryWrapper(user, req.getParameterMap());
         return smsMessageTaskService.queryPageList(req, queryWrapper, pageSize, pageNo);
     }
@@ -48,6 +50,19 @@ public class SmsMessageTaskController {
             result.error500("操作失败[%s]".formatted(e.getMessage()));
         }
         return result;
+    }
+
+
+    /**
+     * excel导入
+     *
+     * @param request
+     * @param response
+     * @return
+     */
+    @PostMapping(value = "/importExcel")
+    public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
+        return smsMessageTaskService.importExcel(request, response, SmsMessageTemplate.class);
     }
 
     @RequestMapping(value = "/edit", method = RequestMethod.POST)

@@ -11,9 +11,11 @@ import org.jeecg.common.util.*;
 import org.jeecg.modules.airag.app.consts.AiAppConsts;
 import org.jeecg.modules.airag.app.entity.AiragApp;
 import org.jeecg.modules.airag.app.entity.ConversationMessageRecords;
+import org.jeecg.modules.airag.app.entity.SmsDevice;
 import org.jeecg.modules.airag.app.mapper.AiragAppMapper;
 import org.jeecg.modules.airag.app.mapper.ConversationMessageRecordsMapper;
 import org.jeecg.modules.airag.app.mapper.ConversationRecordsMapper;
+import org.jeecg.modules.airag.app.mapper.SmsDeviceMapper;
 import org.jeecg.modules.airag.app.service.IAiragChatService;
 import org.jeecg.modules.airag.app.vo.AppDebugParams;
 import org.jeecg.modules.airag.app.vo.ChatConversation;
@@ -35,7 +37,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.servlet.http.HttpServletRequest;
@@ -78,7 +79,11 @@ public class AiragChatServiceImpl implements IAiragChatService {
     @Autowired
     private RedisUtil redisUtil;
 
+    @Autowired
+    private SmsDeviceMapper smsDeviceMapper;
+
     @Override
+    @Transactional
     public SseEmitter send(ChatSendParams chatSendParams) {
         AssertUtils.assertNotEmpty("参数异常", chatSendParams);
         String userMessage = chatSendParams.getContent();
@@ -93,12 +98,23 @@ public class AiragChatServiceImpl implements IAiragChatService {
             app = airagAppMapper.getByIdIgnoreTenant(chatSendParams.getAppId());
         }
         ChatConversation chatConversation = getOrCreateChatConversation(app, conversationId);
+        String[] split = chatConversation.getId().split(":");
+        SmsDevice byDeviceCode = smsDeviceMapper.getByDeviceCode(split[0]);
+        if (byDeviceCode==null){
+            chatSendParams.setFailed(true);
+            chatSendParams.setFailedReason("找不到设备");
+        }else if (!getUsername(SpringContextUtils.getHttpServletRequest()).equals(byDeviceCode.getBindUser())){
+            chatSendParams.setFailed(true);
+            chatSendParams.setFailedReason("设备归属变更");
+        }
         // 更新标题
         if (oConvertUtils.isEmpty(chatConversation.getTitle())) {
             chatConversation.setTitle(chatSendParams.getConversationId());
         }
         // 发送消息
-        return doChat(chatConversation, topicId, chatSendParams);
+        SseEmitter sseEmitter = doChat(chatConversation, topicId, chatSendParams);
+
+        return sseEmitter;
     }
 
     @Override
@@ -185,6 +201,9 @@ public class AiragChatServiceImpl implements IAiragChatService {
             return Result.ok(Collections.emptyList());
         }
         ChatConversation conversation = conversationRecordsMapper.getByConversationKey(key);
+        if (conversation == null) {
+            return Result.ok(Collections.emptyList());
+        }
         List<ConversationMessageRecords> messageRecords = conversationMessageRecordsMapper.getByConversationId(conversation.getId());
         if (oConvertUtils.isObjectEmpty(messageRecords)) {
             return Result.ok(Collections.emptyList());
@@ -219,6 +238,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
         String conversationId = chatReplyParams.buildReplyConversationId();
         // 获取app信息
         AiragApp app = null;
+        ChatConversation conversation = conversationRecordsMapper.getById(conversationId);
         if (oConvertUtils.isNotEmpty(chatReplyParams.getAppId())) {
             app = airagAppMapper.getByIdIgnoreTenant(chatReplyParams.getAppId());
         }
@@ -380,14 +400,23 @@ public class AiragChatServiceImpl implements IAiragChatService {
         if (oConvertUtils.isEmpty(key)) {
             return;
         }
+        String[] split = chatConversation.getId().split(":");
         ChatConversation chatRecord = conversationRecordsMapper.getByConversationKey(key);
         if (chatRecord == null){
-            conversationRecordsMapper.add(chatConversation,key,getUsername(httpRequest));
+            conversationRecordsMapper.add(chatConversation,key,getUsername(httpRequest),split[0],split[1]);
         }else {
             conversationRecordsMapper.updateTitle(chatRecord.getId(),chatConversation.getTitle());
         }
+        if (Boolean.TRUE.equals(chatConversation.isHasReply())){
+            conversationRecordsMapper.reply(chatRecord==null?chatConversation.getId():chatRecord.getId());
+        }
         if (hasAddMessage(chatConversation)) {
+
             chatConversation.getMessages().stream().filter(e->Boolean.TRUE.equals(e.getAddMessage())).forEach(data->{
+                data.setAddMessage(false);
+                data.setDeviceCode(split[0]);
+                data.setCustomer(split[1]);
+                data.setMessageStatus(chatConversation.isHasReply()?1:0);
                 conversationMessageRecordsMapper.add(data);
             });
         }
@@ -459,11 +488,12 @@ public class AiragChatServiceImpl implements IAiragChatService {
      * @param message
      * @param chatConversation
      * @param topicId
+     * @param sendParams
      * @return
      * @author chenrui
      * @date 2025/2/25 19:05
      */
-    private void appendMessage(List<ChatMessage> messages, ChatMessage message, ChatConversation chatConversation, String topicId) {
+    private void appendMessage(List<ChatMessage> messages, ChatMessage message, ChatConversation chatConversation, String topicId, ChatSendParams sendParams) {
         if (message.type().equals(ChatMessageType.SYSTEM)) {
             // 系统消息,放到消息列表最前面,并且不记录历史
             messages.add(0, message);
@@ -481,6 +511,9 @@ public class AiragChatServiceImpl implements IAiragChatService {
         historyMessage.setTopicId(topicId);
         historyMessage.setDatetime(DateUtils.now());
         historyMessage.setAddMessage(true);
+        historyMessage.setError(chatConversation.getError());
+        historyMessage.setThirdId(sendParams.getThirdId());
+        historyMessage.setMessageStatus(Boolean.TRUE.equals(sendParams.getIsReply())?4:null);
        if (message.type().equals(ChatMessageType.USER)) {
             historyMessage.setRole(AiragConsts.MESSAGE_ROLE_USER);
             StringBuilder textContent = new StringBuilder();
@@ -542,14 +575,21 @@ public class AiragChatServiceImpl implements IAiragChatService {
         log.info("[AI-CHAT]开始发送消息,requestId:{}", requestId);
         AiragLocalCache.put(AiragConsts.CACHE_TYPE_SSE_SEND_TIME, requestId, System.currentTimeMillis());
         try {
-            // 组装用户消息
-            UserMessage userMessage = aiChatHandler.buildUserMessage(sendParams.getContent(), sendParams.getImages());
             if (Boolean.TRUE.equals(sendParams.getIsReply())){
                 //回复
                 sendWithDefault(requestId, chatConversation, topicId, null, messages, null,sendParams);
             }else {
+                // 组装用户消息
+                UserMessage userMessage = aiChatHandler.buildUserMessage(sendParams.getContent(), sendParams.getImages());
+                appendMessage(messages, userMessage, chatConversation, topicId, sendParams);
+//                appendSuccessMessage(requestId, chatConversation, topicId, null, messages, null,sendParams);
                 // 追加消息
-                appendMessage(messages, userMessage, chatConversation, topicId);
+                if (Boolean.TRUE.equals(sendParams.getFailed())){
+                    appendFailedMessage(requestId, chatConversation, topicId, null, messages, null,sendParams);
+                }else {
+                    EventData eventData = new EventData(requestId, null, EventData.EVENT_MESSAGE_END, chatConversation.getId(), topicId);
+                    closeSSE(emitter,eventData);
+                }
             }
 
         } catch (Throwable e) {
@@ -559,6 +599,51 @@ public class AiragChatServiceImpl implements IAiragChatService {
             closeSSE(emitter, eventData);
         }
         return emitter;
+    }
+
+    private void appendFailedMessage(String requestId, ChatConversation chatConversation, String topicId, String modelId, List<ChatMessage> messages, AIChatParams aiChatParams, ChatSendParams sendParams) {
+        EventData eventData = new EventData(requestId, null, EventData.EVENT_FLOW_ERROR, chatConversation.getId(), topicId);
+        eventData.setData(EventFlowData.builder().success(false).message(sendParams.getFailedReason()).build());
+
+        // sse
+        SseEmitter emitter = AiragLocalCache.get(AiragConsts.CACHE_TYPE_SSE, requestId);
+        if (null == emitter) {
+            log.warn("[AI应用]接收LLM返回会话已关闭");
+            return;
+        }
+        sendMessage2Client(emitter, eventData);
+        AiMessage resp = new AiMessage(sendParams.getFailedReason());
+        chatConversation.setError(sendParams.getFailed());
+        EventData eventDataEnd = new EventData(requestId, null, EventData.EVENT_MESSAGE_END, chatConversation.getId(), topicId);
+        appendMessage(messages, resp, chatConversation, topicId, sendParams);
+        // 保存会话
+//        saveChatConversation(chatConversation, false, SpringContextUtils.getHttpServletRequest());
+        closeSSE(emitter, eventDataEnd);
+    }
+
+    private void appendSuccessMessage(String requestId, ChatConversation chatConversation, String topicId, String modelId, List<ChatMessage> messages, AIChatParams aiChatParams, ChatSendParams sendParams) {
+        EventData eventData = new EventData(requestId, null, EventData.EVENT_MESSAGE, chatConversation.getId(), topicId);
+        eventData.setData(EventFlowData.builder().success(true).message(sendParams.getContent()).build());
+        eventData.setRequestId(requestId);
+
+        // sse
+        SseEmitter emitter = AiragLocalCache.get(AiragConsts.CACHE_TYPE_SSE, requestId);
+        if (null == emitter) {
+            log.warn("[AI应用]接收LLM返回会话已关闭");
+            return;
+        }
+//        sendMessage2Client(emitter, eventData);
+        UserMessage resp = new UserMessage(sendParams.getContent());
+        chatConversation.setError(sendParams.getFailed());
+        appendMessage(messages, resp, chatConversation, topicId, sendParams);
+        // 保存会话
+//        saveChatConversation(chatConversation, false, SpringContextUtils.getHttpServletRequest());
+        if (!Boolean.TRUE.equals(sendParams.getFailed())){
+            EventData eventDataEnd = new EventData(requestId, null, EventData.EVENT_MESSAGE_END, chatConversation.getId(), topicId);
+//            sendMessage2Client(emitter, eventDataEnd);
+            closeSSE(emitter, eventDataEnd);
+        }
+
     }
 
     /**
@@ -622,7 +707,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
                         msgEventData.setData(messageEventData);
                         msgEventData.setRequestId(requestId);
                         sendMessage2Client(emitter, msgEventData);
-                        appendMessage(messages, aiMessage, chatConversation, topicId);
+                        appendMessage(messages, aiMessage, chatConversation, topicId, sendParams);
                         // 保存会话
                         saveChatConversation(chatConversation, false, httpRequest);
                     }
@@ -667,7 +752,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
         // AI应用提示词
         String prompt = aiApp.getPrompt();
         if (oConvertUtils.isNotEmpty(prompt)) {
-            appendMessage(messages, new SystemMessage(prompt), chatConversation, topicId);
+            appendMessage(messages, new SystemMessage(prompt), chatConversation, topicId, null);
         }
 
         AIChatParams aiChatParams = new AIChatParams();
@@ -815,7 +900,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
         sendMessage2Client(emitter, eventData);
         AiMessage resp = new AiMessage(sendParams.getContent());
         EventData eventDataEnd = new EventData(requestId, null, EventData.EVENT_MESSAGE_END, chatConversation.getId(), topicId);
-        appendMessage(messages, resp, chatConversation, topicId);
+        appendMessage(messages, resp, chatConversation, topicId,sendParams);
         // 保存会话
 //        saveChatConversation(chatConversation, false, SpringContextUtils.getHttpServletRequest());
         closeSSE(emitter, eventDataEnd);

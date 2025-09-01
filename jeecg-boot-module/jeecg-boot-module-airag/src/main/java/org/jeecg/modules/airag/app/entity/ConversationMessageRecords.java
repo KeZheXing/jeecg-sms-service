@@ -8,4 +8,14 @@ public class ConversationMessageRecords extends MessageHistory {
 
     private Boolean addMessage;
 
+    private Boolean error;
+
+    private String deviceCode;
+
+    private String customer;
+
+    private Integer messageStatus;
+
+    private String thirdId;
+
 }

@@ -6,10 +6,12 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.Param;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.vo.LoginUser;
 import org.jeecg.common.system.vo.SysUserCacheInfo;
+import org.jeecg.modules.airag.app.vo.ChatSendParams;
+import org.jeecg.modules.airag.app.vo.SmsCallbackRequest;
 import org.jeecg.modules.system.entity.SysRoleIndex;
 import org.jeecg.modules.system.entity.SysUser;
 import org.jeecg.modules.system.model.SysUserSysDepartModel;
@@ -18,9 +20,9 @@ import org.jeecg.modules.system.vo.lowapp.DepartAndUserInfo;
 import org.jeecg.modules.system.vo.lowapp.UpdateDepartInfo;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -484,6 +486,16 @@ public interface ISysUserService extends IService<SysUser> {
      */
     void updatePasswordNotBindPhone(String oldPassword, String password, String username);
 
-    @Update("update sys_user set balance = balance-send_cost,send=send+1 where user_name = #{userName} ")
-    void reduceSendCost(String userName);
+
+    Boolean reduceSendCost(String userName, int size);
+
+	void recoveryBalance(String username);
+
+    SseEmitter send(ChatSendParams chatSendParams);
+
+	void callback(SmsCallbackRequest smsCallbackRequest);
+
+	void addHandleTask(String userName);
+
+	void addTask(@Param("username") String username, @Param("length") int length);
 }

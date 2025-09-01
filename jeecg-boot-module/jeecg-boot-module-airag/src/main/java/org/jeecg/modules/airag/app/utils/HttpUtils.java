@@ -1,4 +1,4 @@
-package org.jeecg.modules.sms.utils;
+package org.jeecg.modules.airag.app.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;

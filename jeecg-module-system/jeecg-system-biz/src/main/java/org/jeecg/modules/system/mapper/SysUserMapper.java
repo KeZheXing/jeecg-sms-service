@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 import org.jeecg.modules.system.entity.SysUser;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.jeecg.modules.system.model.SysUserSysDepartModel;
@@ -222,4 +223,19 @@ public interface SysUserMapper extends BaseMapper<SysUser> {
 	 */
 	@Select("select id,phone from sys_user where phone = #{phone} and username = #{username}")
     SysUser getUserByNameAndPhone(@Param("phone") String phone, @Param("username") String username);
+
+	@Update("update sys_user set balance = balance-(send_cost*${length}),send=send+${length} where username = #{userName} and balance-(send_cost*${length})>=0")
+    Integer reduceSendCost(@Param("userName") String userName, @Param("length") int length);
+
+	@Update("update sys_user set balance = balance + send_cost,failed=failed+1 where username =#{username} ")
+	void recoveryBalance(String username);
+
+	@Update("update sys_user set receive = receive+1 ,balance=balance-receive_cost where username = #{bindUser} ")
+    void callback(String bindUser);
+
+	@Update("update sys_user set handle_task = handle_task+1  where username = #{bindUser} ")
+	void addHandleTask(String userName);
+
+	@Update("update sys_user set add_Task = add_task+${length}  where username = #{username} ")
+	void addTask(@Param("username") String username,@Param("length") int length);
 }

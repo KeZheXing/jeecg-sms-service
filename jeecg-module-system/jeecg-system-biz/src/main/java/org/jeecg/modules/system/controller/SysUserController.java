@@ -1929,4 +1929,19 @@ public class SysUserController {
         result.setMessage("发送验证码成功！");
         return result;
     }
+
+    /**
+     * 发送注销用户手机号验证密码[敲敲云专用]
+     *
+     * @param jsonObject
+     * @return
+     */
+    @GetMapping(value = "/panel")
+    public Result<SysUser> sendLogOffPhoneSms(HttpServletRequest request) {
+        Result<String> result = new Result<>();
+        //获取登录用户名
+        String username = JwtUtil.getUserNameByToken(request);
+        return Result.ok(sysUserService.getUserByName(username));
+
+    }
 }

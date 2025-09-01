@@ -16,14 +16,14 @@ import java.util.List;
  * @Date:   2025-02-26
  * @Version: V1.0
  */
-public interface ConversationMessageRecordsMapper extends BaseMapper<AiragApp> {
+public interface ConversationMessageRecordsMapper extends BaseMapper<ConversationMessageRecords> {
 
 
     @Select("select * from  conversation_message_records where conversation_id = #{conversationId} ")
     List<ConversationMessageRecords> getByConversationId(String conversationId);
 
-    @Insert("insert into conversation_message_records (conversation_id, topic_id, role, content, datetime) \n" +
+    @Insert("insert into conversation_message_records (conversation_id, topic_id, role, content, datetime,error,device_code,customer,third_id,message_status) \n" +
             "value \n" +
-            "(#{conversationId} ,#{topicId} ,#{role} ,#{content} ,#{datetime} )")
+            "(#{conversationId} ,#{topicId} ,#{role} ,#{content} ,#{datetime},#{error},#{deviceCode} ,#{customer},#{thirdId}   ,#{messageStatus}  )")
     Integer add(ConversationMessageRecords data);
 }

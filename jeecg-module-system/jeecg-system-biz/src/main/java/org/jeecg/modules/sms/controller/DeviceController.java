@@ -6,18 +6,20 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
-import org.jeecg.common.constant.CommonConstant;
 import org.jeecg.common.system.query.QueryGenerator;
-import org.jeecg.common.util.PasswordUtil;
-import org.jeecg.common.util.oConvertUtils;
-import org.jeecg.modules.sms.entity.SmsDevice;
-import org.jeecg.modules.sms.service.IDeviceService;
+
+import org.jeecg.config.shiro.IgnoreAuth;
+import org.jeecg.modules.airag.app.entity.ConversationMessageRecords;
+import org.jeecg.modules.airag.app.entity.SmsDevice;
+import org.jeecg.modules.airag.app.service.IConversationMessageRecordsService;
+import org.jeecg.modules.airag.app.service.IDeviceService;
+import org.jeecg.modules.airag.app.vo.SmsCallbackRequest;
 import org.jeecg.modules.system.entity.SysUser;
+import org.jeecg.modules.system.service.ISysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Date;
 
 /**
  * @Author: KKKKK
@@ -30,12 +32,52 @@ public class DeviceController {
 
     @Autowired
     private IDeviceService deviceService;
+    @Autowired
+    private ISysUserService userService;
+    @Autowired
+    private IConversationMessageRecordsService conversationMessageRecordsService;
 
     @RequestMapping(value = "/listAll", method = RequestMethod.GET)
     public Result<IPage<SmsDevice>> queryAllPageList(SmsDevice user, @RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
-                                                   @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, HttpServletRequest req) {
+                                                     @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, HttpServletRequest req) {
         QueryWrapper<SmsDevice> queryWrapper = QueryGenerator.initQueryWrapper(user, req.getParameterMap());
         return deviceService.queryPageList(req, queryWrapper, pageSize, pageNo);
+    }
+
+    @RequestMapping(value = "/messageList", method = RequestMethod.GET)
+    public Result<IPage<ConversationMessageRecords>> messageList(ConversationMessageRecords conversationMessageRecords, @RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
+                                                     @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, HttpServletRequest req) {
+        QueryWrapper<ConversationMessageRecords> queryWrapper = QueryGenerator.initQueryWrapper(conversationMessageRecords, req.getParameterMap());
+        queryWrapper.isNull("error");
+        Result<IPage<ConversationMessageRecords>> iPageResult = conversationMessageRecordsService.queryPageList(req, queryWrapper, pageSize, pageNo);
+        return iPageResult;
+    }
+
+    @IgnoreAuth
+    @RequestMapping(value = "/callback", method = RequestMethod.POST)
+    public Result<?> callback(@RequestBody JSONObject jsonObject) {
+        log.info("sms callback : {}", jsonObject);
+        SmsCallbackRequest smsCallbackRequest = jsonObject.toJavaObject(SmsCallbackRequest.class);
+        userService.callback(smsCallbackRequest);
+        return Result.ok();
+    }
+
+    @RequestMapping(value = "/debug", method = RequestMethod.POST)
+    public Result<?> debug(@RequestBody JSONObject jsonObject) {
+        Result<?> result = new Result<SmsDevice>();
+        try {
+            SmsDevice device = JSON.parseObject(jsonObject.toJSONString(), SmsDevice.class);
+            Boolean debug = deviceService.debug(device);
+            if (debug){
+                result.success("调试成功");
+            }else {
+                result.error500("调试失败");
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            result.error500("调试失败");
+        }
+        return result;
     }
 
     @RequestMapping(value = "/add", method = RequestMethod.POST)

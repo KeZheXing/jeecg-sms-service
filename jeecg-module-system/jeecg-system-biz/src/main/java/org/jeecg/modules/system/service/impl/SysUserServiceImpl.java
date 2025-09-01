@@ -30,10 +30,20 @@ import org.jeecg.common.constant.enums.SysAnnmentTypeEnum;
 import org.jeecg.common.desensitization.annotation.SensitiveEncode;
 import org.jeecg.common.exception.JeecgBootBizTipException;
 import org.jeecg.common.exception.JeecgBootException;
+import org.jeecg.common.system.util.JwtUtil;
 import org.jeecg.common.system.vo.LoginUser;
 import org.jeecg.common.system.vo.SysUserCacheInfo;
 import org.jeecg.common.util.*;
 import org.jeecg.config.mybatis.MybatisPlusSaasConfig;
+import org.jeecg.modules.airag.app.consts.IMConstants;
+import org.jeecg.modules.airag.app.entity.SmsDevice;
+import org.jeecg.modules.airag.app.mapper.ConversationRecordsMapper;
+import org.jeecg.modules.airag.app.mapper.SmsDeviceMapper;
+import org.jeecg.modules.airag.app.service.IAiragChatService;
+import org.jeecg.modules.airag.app.service.ISmsChannelService;
+import org.jeecg.modules.airag.app.utils.TelegramBot;
+import org.jeecg.modules.airag.app.vo.ChatSendParams;
+import org.jeecg.modules.airag.app.vo.SmsCallbackRequest;
 import org.jeecg.modules.base.service.BaseCommonService;
 import org.jeecg.modules.jmreport.common.util.OkConvertUtils;
 import org.jeecg.modules.message.handle.impl.SystemSendMsgHandle;
@@ -58,7 +68,6 @@ import org.jeecgframework.poi.excel.entity.ImportParams;
 import org.jeecgframework.poi.excel.view.JeecgEntityExcelView;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -68,6 +77,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -130,7 +140,19 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 	private ISysThirdAccountService sysThirdAccountService;
 	@Autowired
 	private RedisUtil redisUtil;
-	
+	@Autowired
+	@Lazy
+	private IAiragChatService chatService;
+	@Autowired
+	@Lazy
+	private ISmsChannelService iSmsChannelService;
+	@Autowired
+	private SmsDeviceMapper deviceMapper;
+	@Autowired
+	private ConversationRecordsMapper conversationRecordsMapper;
+	@Autowired
+	private TelegramBot.MyTelegramBot telegramBot;
+
 	@Override
 	public Result<IPage<SysUser>> queryPageList(HttpServletRequest req, QueryWrapper<SysUser> queryWrapper, Integer pageSize, Integer pageNo) {
 		Result<IPage<SysUser>> result = new Result<IPage<SysUser>>();
@@ -2382,4 +2404,84 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         String newPassWord = PasswordUtil.encrypt(username, password, user.getSalt());
         this.userMapper.update(new SysUser().setPassword(newPassWord), new LambdaQueryWrapper<SysUser>().eq(SysUser::getId, user.getId()));
     }
+
+	@Override
+	public Boolean reduceSendCost(String userName, int length) {
+		return this.baseMapper.reduceSendCost(userName,length)==1;
+	}
+
+	@Override
+	public void recoveryBalance(String username) {
+		this.baseMapper.recoveryBalance(username);
+	}
+
+	@Override
+	@Transactional
+	public SseEmitter send(ChatSendParams chatSendParams) {
+		String username = JwtUtil.getUsername(TokenUtils.getTokenByRequest(SpringContextUtils.getHttpServletRequest()));
+		Boolean reduce = reduceSendCost(username, 1);
+		if (!reduce){
+			chatSendParams.setFailed(true);
+			chatSendParams.setFailedReason("余额不足");
+		}
+		if (reduce){
+			String[] split = chatSendParams.getConversationId().split(":");
+			String thirdId = iSmsChannelService.sendMsgOne(username, split[0], chatSendParams.getContent(), split[1]);
+			chatSendParams.setThirdId(thirdId);
+		}
+
+		SseEmitter send = chatService.send(chatSendParams);
+		return send;
+	}
+
+	@Override
+	@Transactional
+	public void callback(SmsCallbackRequest smsCallbackRequest) {
+		long incr = redisUtil.incr(smsCallbackRequest.getId(), 1);
+		if (incr>1){
+			log.info("重复的消息");
+			return;
+		}
+		SmsDevice device = deviceMapper.getByDeviceId(smsCallbackRequest.getDeviceId());
+		if (IMConstants.SMS_sent.equals(smsCallbackRequest.getEvent())){
+			conversationRecordsMapper.sent(smsCallbackRequest.getPayload().getMessageId());
+		}else if (IMConstants.SMS_DELIVERED.equals(smsCallbackRequest.getEvent())){
+			redisUtil.del(device.getDeviceCode());
+			conversationRecordsMapper.delivered(smsCallbackRequest.getPayload().getMessageId());
+		}else if (IMConstants.SMS_FAILED.equals(smsCallbackRequest.getEvent())){
+			conversationRecordsMapper.failed(smsCallbackRequest.getPayload().getMessageId());
+			long incr1 = redisUtil.incr(device.getDeviceCode(), 1);
+			if (incr1>3){
+				if (incr1==4){
+					telegramBot.sendToChats(String.format("设备[%s]连续失败三次,暂停设备", device.getDeviceCode()));
+				}
+				deviceMapper.stop(device.getId());
+				deviceMapper.failed(device.getDeviceCode());
+				log.info(String.format("退还费用[%s]", device.getBindUser()));
+				this.recoveryBalance(device.getBindUser());
+			}
+		}else if (IMConstants.SMS_RECEIVED.equals(smsCallbackRequest.getEvent())){
+			String bindUser = device.getBindUser();
+			this.baseMapper.callback(bindUser);
+			deviceMapper.receive(device.getDeviceCode());
+			ChatSendParams chatSendParams = new ChatSendParams();
+			chatSendParams.setIsReply(true);
+			chatSendParams.setFrom(smsCallbackRequest.getPayload().getPhoneNumber().replace("+86","").replace("+61","").replace("+1",""));
+			chatSendParams.setContent(smsCallbackRequest.getPayload().getMessage());
+			chatSendParams.setDeviceId(device.getDeviceCode());
+			TokenUtils.tempUser.set(device.getBindUser());
+			chatService.reply(chatSendParams);
+			TokenUtils.tempUser.remove();
+		}
+	}
+
+	@Override
+	public void addHandleTask(String userName) {
+		this.baseMapper.addHandleTask(userName);
+	}
+
+	@Override
+	public void addTask(String username, int length) {
+		this.baseMapper.addTask(username,length);
+	}
 }

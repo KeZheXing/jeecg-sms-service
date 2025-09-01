@@ -4,11 +4,13 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.jeecg.common.api.vo.Result;
-import org.jeecg.modules.sms.entity.SmsDevice;
-import org.jeecg.modules.sms.entity.SmsMessageTask;
+import org.jeecg.modules.airag.app.entity.SmsMessageTask;
+import org.jeecg.modules.message.entity.SmsMessageTemplate;
+import org.jeecg.modules.message.entity.SysMessageTemplate;
 import org.jeecg.modules.sms.entity.vo.SmsMessageTaskAddVO;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @Author: KKKKK
@@ -20,4 +22,6 @@ public interface ISmsMessageTaskService extends IService<SmsMessageTask> {
 
 
     void add(SmsMessageTaskAddVO addMessageTask);
+
+    Result<?> importExcel(HttpServletRequest request, HttpServletResponse response, Class<SmsMessageTemplate> sysMessageTemplateClass);
 }

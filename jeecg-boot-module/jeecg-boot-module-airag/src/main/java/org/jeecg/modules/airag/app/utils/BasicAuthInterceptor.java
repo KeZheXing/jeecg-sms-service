@@ -1,4 +1,4 @@
-package org.jeecg.modules.sms.utils;
+package org.jeecg.modules.airag.app.utils;
 
 import okhttp3.Credentials;
 import okhttp3.Interceptor;

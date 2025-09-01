@@ -58,6 +58,12 @@ public class ChatSendParams {
 
     private Boolean isReply;
 
+    private Boolean failed;
+
+    private String failedReason;
+
+    private String thirdId;
+
     public String buildReplyConversationId() {
         return this.deviceId + ":" + this.from + "";
     }

@@ -65,4 +65,8 @@ public class ChatConversation {
     private Boolean isCreate;
 
     private Integer conversationStatus;
+
+    private Boolean error;
+
+    private String userName;
 }

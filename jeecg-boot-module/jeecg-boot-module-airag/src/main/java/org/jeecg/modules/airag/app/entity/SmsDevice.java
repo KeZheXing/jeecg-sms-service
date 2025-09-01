@@ -1,4 +1,4 @@
-package org.jeecg.modules.sms.entity;
+package org.jeecg.modules.airag.app.entity;
 
 /**
  * @Author: KKKKK
@@ -25,11 +25,12 @@ import java.io.Serializable;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
-public class SmsMessageTask implements Serializable {
+public class SmsDevice implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
+     *
      * 设备ID
      */
     @TableId(type = IdType.ASSIGN_ID)
@@ -38,34 +39,47 @@ public class SmsMessageTask implements Serializable {
     /**
      * 设备编号
      */
-    private String messageDeviceCode;
+    private String deviceCode;
+
+    /**
+     * 设备ID
+     */
+    private String deviceId;
 
     /**
      * 账号
      */
-    private String messageTo;
+    private String deviceUserName;
 
     /**
      * 密码
      */
-    private String messageContent;
+    private String devicePassword;
 
     /**
      * 间隔
      */
-    private String messageType;
+    @TableField(value = "`interval`")
+    private Integer interval;
 
     /**
      * 发送上限
      */
-    private String messageStatus;
+    private Integer sendLimit;
 
-    private String userName;
+    /**
+     * 设备状态
+     */
+    private String deviceStatus;
 
-    private java.util.Date createdTime;
+    private Integer taskNum;
 
-    private java.util.Date updatedTime;
+    private Integer send;
 
-    private java.util.Date handleTime;
+    private Integer receive;
+
+    private Integer reply;
+
+    private String bindUser;
 
 }
