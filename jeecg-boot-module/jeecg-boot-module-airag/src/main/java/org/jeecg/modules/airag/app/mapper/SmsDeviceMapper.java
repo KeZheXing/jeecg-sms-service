@@ -40,4 +40,10 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
 
     @Update("update sms_device set device_status=0 where id = #{id} ")
     void stop(Integer id);
+
+    @Update("update sms_device set last_handle_time =now() where device_code = #{deviceCode} ")
+    void updateLastHandleTime(String deviceCode);
+
+    @Select("select * from sms_device where (last_handle_time is null or last_handle_time<date_sub(now(),interval `interval` second )) and device_status = 'Y';")
+    List<SmsDevice> getEnableDevice();
 }

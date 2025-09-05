@@ -246,6 +246,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
         chatConversation.setHasReply(true);
         chatConversation.setTitle(Boolean.TRUE.equals(chatConversation.getIsCreate())?conversationId:chatConversation.getTitle());
         chatReplyParams.setIsReply(true);
+        chatConversation.setIsReply(true);
         // 发送消息
         SseEmitter a = doChat(chatConversation, "A", chatReplyParams);
         return Result.ok();
@@ -402,13 +403,17 @@ public class AiragChatServiceImpl implements IAiragChatService {
         }
         String[] split = chatConversation.getId().split(":");
         ChatConversation chatRecord = conversationRecordsMapper.getByConversationKey(key);
+        String username = getUsername(httpRequest);
         if (chatRecord == null){
-            conversationRecordsMapper.add(chatConversation,key,getUsername(httpRequest),split[0],split[1]);
+            conversationRecordsMapper.add(chatConversation,key, username,split[0],split[1]);
         }else {
             conversationRecordsMapper.updateTitle(chatRecord.getId(),chatConversation.getTitle());
         }
         if (Boolean.TRUE.equals(chatConversation.isHasReply())){
-            conversationRecordsMapper.reply(chatRecord==null?chatConversation.getId():chatRecord.getId());
+            Integer reply = conversationRecordsMapper.reply(chatRecord == null ? chatConversation.getId() : chatRecord.getId());
+            if (reply==1){
+                conversationRecordsMapper.userReply(username);
+            }
         }
         if (hasAddMessage(chatConversation)) {
 
@@ -416,7 +421,8 @@ public class AiragChatServiceImpl implements IAiragChatService {
                 data.setAddMessage(false);
                 data.setDeviceCode(split[0]);
                 data.setCustomer(split[1]);
-                data.setMessageStatus(chatConversation.isHasReply()?1:0);
+                data.setMessageStatus(Boolean.TRUE.equals(chatConversation.getIsReply())?4:0);
+                data.setUserName(username);
                 conversationMessageRecordsMapper.add(data);
             });
         }

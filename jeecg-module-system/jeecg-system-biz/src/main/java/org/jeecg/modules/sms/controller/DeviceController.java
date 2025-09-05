@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
 
+import org.jeecg.common.system.util.JwtUtil;
+import org.jeecg.common.util.TokenUtils;
 import org.jeecg.config.shiro.IgnoreAuth;
 import org.jeecg.modules.airag.app.entity.ConversationMessageRecords;
 import org.jeecg.modules.airag.app.entity.SmsDevice;
@@ -49,6 +51,7 @@ public class DeviceController {
                                                      @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, HttpServletRequest req) {
         QueryWrapper<ConversationMessageRecords> queryWrapper = QueryGenerator.initQueryWrapper(conversationMessageRecords, req.getParameterMap());
         queryWrapper.isNull("error");
+        queryWrapper.eq("user_name", JwtUtil.getUserNameByToken(req));
         Result<IPage<ConversationMessageRecords>> iPageResult = conversationMessageRecordsService.queryPageList(req, queryWrapper, pageSize, pageNo);
         return iPageResult;
     }

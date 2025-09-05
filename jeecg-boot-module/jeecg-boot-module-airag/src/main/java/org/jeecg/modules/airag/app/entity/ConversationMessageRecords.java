@@ -18,4 +18,6 @@ public class ConversationMessageRecords extends MessageHistory {
 
     private String thirdId;
 
+    private String userName;
+
 }

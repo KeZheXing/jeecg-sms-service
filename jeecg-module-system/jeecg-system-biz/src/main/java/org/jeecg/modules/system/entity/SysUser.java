@@ -229,4 +229,5 @@ public class SysUser implements Serializable {
 
     private BigDecimal receiveCost;
 
+    private Integer replyTask;
 }

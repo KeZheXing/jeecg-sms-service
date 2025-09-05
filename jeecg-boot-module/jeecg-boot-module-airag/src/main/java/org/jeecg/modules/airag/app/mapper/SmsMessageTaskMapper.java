@@ -15,10 +15,8 @@ public interface SmsMessageTaskMapper extends BaseMapper<SmsMessageTask> {
 
     @Select("select message_device_code, message_to, message_status, user_name, message_content, t.id\n" +
             "from sms_message_task t\n" +
-            "join sms_device d on d.device_code = t.message_device_code and d.device_status='Y'\n" +
-            "where message_status = 0\n" +
-            "group by message_device_code, message_to, message_status, user_name, message_content, t.id")
-    List<SmsMessageTask> getWaitTask();
+            "where message_status = 0 and message_device_code= #{deviceCode}\n")
+    SmsMessageTask getWaitTask(String deviceCode);
 
     @Update("update sms_message_task set message_status =1,updated_time=now(),handle_time=now() where id =#{id} ")
     void success(Integer id);

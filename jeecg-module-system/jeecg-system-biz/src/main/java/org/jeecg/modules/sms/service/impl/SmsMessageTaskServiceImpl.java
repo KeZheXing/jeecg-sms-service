@@ -55,7 +55,7 @@ public class SmsMessageTaskServiceImpl extends ServiceImpl<SmsMessageTaskMapper,
         Result<IPage<SmsMessageTask>> result = new Result<IPage<SmsMessageTask>>();
 
         //TODO 外部模拟登陆临时账号，列表不显示
-        queryWrapper.eq("username",JwtUtil.getUsername(TokenUtils.getTokenByRequest()));
+        queryWrapper.eq("user_name",JwtUtil.getUsername(TokenUtils.getTokenByRequest()));
         Page<SmsMessageTask> page = new Page<SmsMessageTask>(pageNo, pageSize);
         IPage<SmsMessageTask> pageList = this.page(page, queryWrapper);
 

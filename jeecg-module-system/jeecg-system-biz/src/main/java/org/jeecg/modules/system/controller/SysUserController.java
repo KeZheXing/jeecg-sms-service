@@ -42,6 +42,7 @@ import org.jeecgframework.poi.excel.entity.ImportParams;
 import org.jeecgframework.poi.excel.view.JeecgEntityExcelView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -147,7 +148,18 @@ public class SysUserController {
     public Result<IPage<SysUser>> queryAllPageList(SysUser user, @RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
                                                    @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, HttpServletRequest req) {
         QueryWrapper<SysUser> queryWrapper = QueryGenerator.initQueryWrapper(user, req.getParameterMap());
-        return sysUserService.queryPageList(req, queryWrapper, pageSize, pageNo);
+        Result<IPage<SysUser>> iPageResult = sysUserService.queryPageList(req, queryWrapper, pageSize, pageNo);
+        if(!CollectionUtils.isEmpty(iPageResult.getResult().getRecords())){
+            iPageResult.getResult().getRecords().forEach(data->{
+                if(data.getReplyTask()==0){
+                    data.setReplyTask(0);
+                }else {
+                    double percentage = (double) data.getReplyTask() / data.getHandleTask() * 100;
+                    data.setReplyTask((int) percentage);
+                }
+            });
+        }
+        return iPageResult;
     }
 
     @RequiresPermissions("system:user:add")
@@ -1941,7 +1953,14 @@ public class SysUserController {
         Result<String> result = new Result<>();
         //获取登录用户名
         String username = JwtUtil.getUserNameByToken(request);
-        return Result.ok(sysUserService.getUserByName(username));
+        SysUser sysUser = sysUserService.getUserByName(username);
+        if(sysUser.getReplyTask()==0){
+            sysUser.setReplyTask(0);
+        }else {
+            double percentage = (double) sysUser.getReplyTask() / sysUser.getHandleTask() * 100;
+            sysUser.setReplyTask((int) percentage);
+        }
+        return Result.ok(sysUser);
 
     }
 }

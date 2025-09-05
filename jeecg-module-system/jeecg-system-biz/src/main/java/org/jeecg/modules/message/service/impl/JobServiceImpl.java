@@ -3,6 +3,7 @@ package org.jeecg.modules.message.service.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.util.DateUtils;
 import org.jeecg.common.util.RedisUtil;
+import org.jeecg.modules.airag.app.entity.SmsDevice;
 import org.jeecg.modules.airag.app.entity.SmsMessageTask;
 import org.jeecg.modules.airag.app.mapper.SmsDeviceMapper;
 import org.jeecg.modules.airag.app.mapper.SmsMessageTaskMapper;
@@ -35,23 +36,37 @@ public class JobServiceImpl implements IJobService {
     @Transactional
     @Override
     public void sendMsgJob() {
-        List<SmsMessageTask> waitTask = smsMessageTaskMapper.getWaitTask();
-        waitTask.forEach(smsMessageTask -> {
-            String thirdId = iSmsChannelService.sendMsg(smsMessageTask);
-            if (thirdId!=null){
-                smsMessageTaskMapper.success(smsMessageTask.getId());
-                addHandleTask(smsMessageTask.getUserName());
-                deviceMapper.success(smsMessageTask.getMessageDeviceCode());
-            }else {
-                smsMessageTaskMapper.failed(smsMessageTask.getId());
-                recoveryBalance(smsMessageTask.getUserName());
-                deviceMapper.failed(smsMessageTask.getMessageDeviceCode());
-                log.info(String.format("退还费用[%s]", smsMessageTask.getUserName()));
-                this.recoveryBalance(smsMessageTask.getUserName());
-                redisUtil.incr(smsMessageTask.getMessageDeviceCode(),1);
-            }
-        });
-        log.info(String.format(" Jeecg-Boot 发送消息任务 SendMsgJob !  时间:" + DateUtils.getTimestamp()));
+        synchronized (this){
+            List<SmsDevice> deviceList = deviceMapper.getEnableDevice();
+
+            deviceList.forEach(device -> {
+                SmsMessageTask smsMessageTask = smsMessageTaskMapper.getWaitTask(device.getDeviceCode());
+                if (smsMessageTask==null){
+                    return;
+                }
+                try {
+                    String thirdId = iSmsChannelService.sendMsg(smsMessageTask);
+                    if (thirdId!=null){
+                        smsMessageTaskMapper.success(smsMessageTask.getId());
+                        addHandleTask(smsMessageTask.getUserName());
+                        deviceMapper.success(smsMessageTask.getMessageDeviceCode());
+                    }else {
+                        smsMessageTaskMapper.failed(smsMessageTask.getId());
+                        recoveryBalance(smsMessageTask.getUserName());
+                        deviceMapper.failed(smsMessageTask.getMessageDeviceCode());
+                        log.info(String.format("退还费用[%s]", smsMessageTask.getUserName()));
+                        this.recoveryBalance(smsMessageTask.getUserName());
+                        redisUtil.incr(smsMessageTask.getMessageDeviceCode(),1);
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
+                    log.error("执行SendMsgJob 失败",e);
+                }finally {
+                    deviceMapper.updateLastHandleTime(smsMessageTask.getMessageDeviceCode());
+                }
+            });
+            log.info(String.format(" Jeecg-Boot 发送消息任务 SendMsgJob !  时间:" + DateUtils.getTimestamp()));
+        }
     }
 
     private void addHandleTask(String userName) {
