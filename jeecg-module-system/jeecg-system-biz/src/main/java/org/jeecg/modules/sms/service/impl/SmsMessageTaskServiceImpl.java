@@ -80,7 +80,7 @@ public class SmsMessageTaskServiceImpl extends ServiceImpl<SmsMessageTaskMapper,
         AssertUtils.assertTrue("余额不足",sysUserService.reduceSendCost(username, split.length));
         sysUserService.addTask(username,split.length);
         for (String num : split) {
-            AssertUtils.assertTrue("号码格式异常",num.length()>10&&num.length()<=13);
+            AssertUtils.assertTrue("号码格式异常",num.length()>8&&num.length()<=13);
             SmsMessageTask smsMessageTask = new SmsMessageTask();
             smsMessageTask.setMessageContent(addMessageTask.getMessageContent());
             smsMessageTask.setMessageTo(num);

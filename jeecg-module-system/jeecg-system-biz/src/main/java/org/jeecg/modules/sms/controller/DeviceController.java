@@ -16,6 +16,7 @@ import org.jeecg.modules.airag.app.entity.SmsDevice;
 import org.jeecg.modules.airag.app.service.IConversationMessageRecordsService;
 import org.jeecg.modules.airag.app.service.IDeviceService;
 import org.jeecg.modules.airag.app.vo.SmsCallbackRequest;
+import org.jeecg.modules.airag.app.vo.SmsJerryCallbackRequest;
 import org.jeecg.modules.system.entity.SysUser;
 import org.jeecg.modules.system.service.ISysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +58,16 @@ public class DeviceController {
     }
 
     @IgnoreAuth
-    @RequestMapping(value = "/callback", method = RequestMethod.POST)
+    @RequestMapping(value = "/callback/jerry", method = RequestMethod.POST)
+    public Result<?> callbackJerry(@RequestBody JSONObject jsonObject) {
+        log.info("sms callback : {}", jsonObject);
+        SmsJerryCallbackRequest smsCallbackRequest = jsonObject.toJavaObject(SmsJerryCallbackRequest.class);
+        userService.callbackJeery(smsCallbackRequest);
+        return Result.ok();
+    }
+
+    @IgnoreAuth
+    @RequestMapping(value = "/callback/yp", method = RequestMethod.POST)
     public Result<?> callback(@RequestBody JSONObject jsonObject) {
         log.info("sms callback : {}", jsonObject);
         SmsCallbackRequest smsCallbackRequest = jsonObject.toJavaObject(SmsCallbackRequest.class);

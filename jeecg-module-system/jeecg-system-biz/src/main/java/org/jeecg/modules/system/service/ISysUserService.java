@@ -12,6 +12,7 @@ import org.jeecg.common.system.vo.LoginUser;
 import org.jeecg.common.system.vo.SysUserCacheInfo;
 import org.jeecg.modules.airag.app.vo.ChatSendParams;
 import org.jeecg.modules.airag.app.vo.SmsCallbackRequest;
+import org.jeecg.modules.airag.app.vo.SmsJerryCallbackRequest;
 import org.jeecg.modules.system.entity.SysRoleIndex;
 import org.jeecg.modules.system.entity.SysUser;
 import org.jeecg.modules.system.model.SysUserSysDepartModel;
@@ -498,4 +499,6 @@ public interface ISysUserService extends IService<SysUser> {
 	void addHandleTask(String userName);
 
 	void addTask(@Param("username") String username, @Param("length") int length);
+
+	void callbackJeery(SmsJerryCallbackRequest smsCallbackRequest);
 }

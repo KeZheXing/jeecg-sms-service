@@ -8,9 +8,12 @@ import org.jeecg.modules.airag.app.entity.SmsMessageTask;
 import org.jeecg.modules.airag.app.mapper.SmsDeviceMapper;
 import org.jeecg.modules.airag.app.mapper.SmsMessageTaskMapper;
 import org.jeecg.modules.airag.app.service.ISmsChannelService;
+import org.jeecg.modules.airag.app.service.impl.SmsCardSendChannelServiceImpl;
+import org.jeecg.modules.airag.app.service.impl.SmsJerryChannelServiceImpl;
 import org.jeecg.modules.message.service.IJobService;
 import org.jeecg.modules.system.service.ISysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,16 +26,16 @@ public class JobServiceImpl implements IJobService {
 
     @Autowired
     private SmsMessageTaskMapper smsMessageTaskMapper;
-
     @Autowired
-    private ISmsChannelService iSmsChannelService;
-
+    private SmsCardSendChannelServiceImpl smsCardSendChannelService;
     @Autowired
     private ISysUserService userService;
     @Autowired
     private SmsDeviceMapper deviceMapper;
     @Autowired
     private RedisUtil redisUtil;
+    @Autowired
+    private SmsJerryChannelServiceImpl smsJerryChannelService;
     @Transactional
     @Override
     public void sendMsgJob() {
@@ -45,7 +48,12 @@ public class JobServiceImpl implements IJobService {
                     return;
                 }
                 try {
-                    String thirdId = iSmsChannelService.sendMsg(smsMessageTask);
+                    String thirdId = null;
+                    if (device.getDeviceChannel().equals("0")){
+                        thirdId = smsCardSendChannelService.sendMsg(smsMessageTask);
+                    }else if (device.getDeviceChannel().equals("1")){
+                        thirdId = smsJerryChannelService.sendMsg(smsMessageTask);
+                    }
                     if (thirdId!=null){
                         smsMessageTaskMapper.success(smsMessageTask.getId());
                         addHandleTask(smsMessageTask.getUserName());

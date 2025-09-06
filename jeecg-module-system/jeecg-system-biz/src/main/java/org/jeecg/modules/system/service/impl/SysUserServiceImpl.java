@@ -41,9 +41,12 @@ import org.jeecg.modules.airag.app.mapper.ConversationRecordsMapper;
 import org.jeecg.modules.airag.app.mapper.SmsDeviceMapper;
 import org.jeecg.modules.airag.app.service.IAiragChatService;
 import org.jeecg.modules.airag.app.service.ISmsChannelService;
+import org.jeecg.modules.airag.app.service.impl.SmsCardSendChannelServiceImpl;
+import org.jeecg.modules.airag.app.service.impl.SmsJerryChannelServiceImpl;
 import org.jeecg.modules.airag.app.utils.TelegramBot;
 import org.jeecg.modules.airag.app.vo.ChatSendParams;
 import org.jeecg.modules.airag.app.vo.SmsCallbackRequest;
+import org.jeecg.modules.airag.app.vo.SmsJerryCallbackRequest;
 import org.jeecg.modules.base.service.BaseCommonService;
 import org.jeecg.modules.jmreport.common.util.OkConvertUtils;
 import org.jeecg.modules.message.handle.impl.SystemSendMsgHandle;
@@ -145,7 +148,10 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 	private IAiragChatService chatService;
 	@Autowired
 	@Lazy
-	private ISmsChannelService iSmsChannelService;
+	private SmsCardSendChannelServiceImpl smsCardSendChannelService;
+	@Autowired
+	@Lazy
+	private SmsJerryChannelServiceImpl smsJerryChannelService;
 	@Autowired
 	private SmsDeviceMapper deviceMapper;
 	@Autowired
@@ -2426,7 +2432,13 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 		}
 		if (reduce){
 			String[] split = chatSendParams.getConversationId().split(":");
-			String thirdId = iSmsChannelService.sendMsgOne(username, split[0], chatSendParams.getContent(), split[1]);
+			String thirdId = null;
+			SmsDevice device = deviceMapper.getByDeviceCode(split[0]);
+			if (device.getDeviceChannel().equals("0")){
+				thirdId = smsCardSendChannelService.sendMsgOne(username,device.getDeviceCode(),chatSendParams.getContent(),split[1]);
+			}else if (device.getDeviceChannel().equals("1")){
+				thirdId = smsJerryChannelService.sendMsgOne(username,device.getDeviceCode(),chatSendParams.getContent(),split[1]);
+			}
 			chatSendParams.setThirdId(thirdId);
 		}
 
@@ -2483,5 +2495,34 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 	@Override
 	public void addTask(String username, int length) {
 		this.baseMapper.addTask(username,length);
+	}
+
+	@Override
+	public void callbackJeery(SmsJerryCallbackRequest smsCallbackRequest) {
+		SmsCallbackRequest request = new SmsCallbackRequest();
+		if (smsCallbackRequest.getContent()!=null){
+			SmsCallbackRequest.Payload payload = new SmsCallbackRequest.Payload();
+			payload.setMessage(smsCallbackRequest.getContent());
+			payload.setMessageId(smsCallbackRequest.getDatetime()+smsCallbackRequest.getFromNum());
+			payload.setPhoneNumber(smsCallbackRequest.getFromNum());
+			request.setPayload(payload);
+			request.setEvent(IMConstants.SMS_RECEIVED);
+			request.setId(smsCallbackRequest.getDatetime()+smsCallbackRequest.getFromNum());
+			request.setDeviceId(smsCallbackRequest.getTo());
+			callback(request);
+		}else if (smsCallbackRequest.getType().equals("sms")){
+			smsCallbackRequest.getArray().forEach(data->{
+				SmsCallbackRequest.Payload payload = new SmsCallbackRequest.Payload();
+				payload.setMessageId((String) data.get(5));
+				Integer status = (Integer) data.get(3);
+				if (status.equals(1)){
+					request.setEvent(IMConstants.SMS_DELIVERED);
+				}else {
+					request.setEvent(IMConstants.SMS_FAILED);
+				}
+				callback(request);
+			});
+		}
+
 	}
 }

@@ -82,4 +82,8 @@ public class SmsDevice implements Serializable {
 
     private String bindUser;
 
+    private String deviceChannel;
+
+    private String deviceOtherInfo;
+
 }
