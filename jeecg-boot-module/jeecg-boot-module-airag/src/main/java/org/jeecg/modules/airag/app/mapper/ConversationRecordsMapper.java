@@ -25,10 +25,16 @@ public interface ConversationRecordsMapper extends BaseMapper<AiragApp> {
             "(#{chat.id} ,#{chat.title},#{key},#{username},now(),now(),#{deviceCode} ,#{customer} )")
     Integer add(@Param("chat") ChatConversation chat, @Param("key") String key,@Param("username") String username,@Param("deviceCode") String deviceCode,@Param("customer") String customer);
 
+    @Insert("insert into conversation_records (id, title, conversation_key, user_name, create_time,update_time,device_code,customer,system_notice,un_read)\n" +
+            "value \n" +
+            "(#{id} ,#{title},#{id},#{username},now(),now(),#{deviceCode} ,#{customer} ,#{systemNotice},1)")
+    Integer saveOne(@Param("id") String id, @Param("title") String title,@Param("username") String username,@Param("deviceCode") String deviceCode,@Param("customer") String customer,@Param("systemNotice") Boolean systemNotice);
+
+
     @Update("update conversation_records set title = #{title},update_time = now() where id = #{id} ")
     Integer updateTitle(@Param("id") String id, @Param("title") String title);
 
-    @Select("select * from conversation_records where user_name =#{username} order by  has_reply desc,update_time desc ")
+    @Select("select * from conversation_records where user_name =#{username} order by system_notice desc,un_read desc, has_reply desc,update_time desc ")
     List<ChatConversation> list(String username);
 
     @Delete("delete from conversation_records where conversation_key = #{key} ")
@@ -49,9 +55,24 @@ public interface ConversationRecordsMapper extends BaseMapper<AiragApp> {
     @Update("update conversation_message_records set message_status = 3 where third_id = #{id} and message_status in (0,1) ")
     void failed(String messageId);
 
+    @Update("update conversation_records set conversation_status = -1 where id = #{id} ")
+    void conversationFailed(String key);
+
     @Select("SELECT * FROM conversation_records WHERE ID =#{conversationId} ")
     ChatConversation getById(String conversationId);
 
     @Update("update sys_user set reply_task = reply_task + 1 where username = #{username} ")
     void userReply(String username);
+
+    @Update("update conversation_records set update_time = now(),un_read = 1 where id = #{key} ")
+    void updateTime(String key);
+
+    @Update("update conversation_records set un_read = 0 where id = #{key} ")
+    void read(String key);
+
+    @Update("update conversation_records set un_read = 1 where id = #{key} ")
+    void unRead(String key);
+
+    @Update("update conversation_records set conversation_status = 0 where id = #{id} ")
+    void conversationDelivered(String messageId);
 }

@@ -99,7 +99,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
         }
         ChatConversation chatConversation = getOrCreateChatConversation(app, conversationId);
         String[] split = chatConversation.getId().split(":");
-        SmsDevice byDeviceCode = smsDeviceMapper.getByDeviceCode(split[0]);
+        SmsDevice byDeviceCode = smsDeviceMapper.getByDeviceCode(split[3]);
         if (byDeviceCode==null){
             chatSendParams.setFailed(true);
             chatSendParams.setFailedReason("找不到设备");
@@ -109,7 +109,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
         }
         // 更新标题
         if (oConvertUtils.isEmpty(chatConversation.getTitle())) {
-            chatConversation.setTitle(chatSendParams.getConversationId());
+            chatConversation.setTitle(byDeviceCode.getDeviceCode()+":"+chatConversation.getId().split(":")[4]);
         }
         // 发送消息
         SseEmitter sseEmitter = doChat(chatConversation, topicId, chatSendParams);
@@ -208,6 +208,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
         if (oConvertUtils.isObjectEmpty(messageRecords)) {
             return Result.ok(Collections.emptyList());
         }
+        conversationRecordsMapper.read(key);
         return Result.ok(messageRecords);
     }
 
@@ -232,10 +233,38 @@ public class AiragChatServiceImpl implements IAiragChatService {
         return Result.ok(app);
     }
 
+
+    @Override
+    public void systemSend(String to, String content){
+        try {
+            String key = "SYSTEM:"+to;
+            ChatConversation conversation = conversationRecordsMapper.getByConversationKey(key);
+            if (conversation == null) {
+                conversationRecordsMapper.saveOne(key,"SYSTEM",to,null,null,true);
+            }else {
+                conversationRecordsMapper.updateTime(key);
+            }
+            ConversationMessageRecords records = new ConversationMessageRecords();
+            records.setConversationId(key);
+            records.setContent(content);
+            records.setMessageStatus(1);
+            records.setRole("ai");
+            records.setSystemNotice(true);
+            records.setTopicId("A");
+            records.setUserName(to);
+            records.setDatetime(DateUtils.now());
+            conversationMessageRecordsMapper.add(records);
+        }catch (Exception e){
+            e.printStackTrace();
+
+        }
+    }
+
     @Override
     public Result reply(ChatSendParams chatReplyParams) {
+        SmsDevice byDeviceCode = smsDeviceMapper.getByDeviceCode(chatReplyParams.getDeviceId());
         // 获取会话信息
-        String conversationId = chatReplyParams.buildReplyConversationId();
+        String conversationId = chatReplyParams.buildReplyConversationId(byDeviceCode.getBindUser());
         // 获取app信息
         AiragApp app = null;
         ChatConversation conversation = conversationRecordsMapper.getById(conversationId);
@@ -244,7 +273,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
         }
         ChatConversation chatConversation = getOrCreateChatConversation(app, conversationId);
         chatConversation.setHasReply(true);
-        chatConversation.setTitle(Boolean.TRUE.equals(chatConversation.getIsCreate())?conversationId:chatConversation.getTitle());
+        chatConversation.setTitle(Boolean.TRUE.equals(chatConversation.getIsCreate())?(chatReplyParams.getDeviceId()+":"+chatReplyParams.getFrom()):chatConversation.getTitle());
         chatReplyParams.setIsReply(true);
         chatConversation.setIsReply(true);
         // 发送消息
@@ -293,9 +322,10 @@ public class AiragChatServiceImpl implements IAiragChatService {
         if (oConvertUtils.isEmpty(conversationId)) {
             return null;
         }
-        String key = getConversationDirCacheKey(httpRequest);
-        key = key + ":" + conversationId;
-        return key;
+        return conversationId;
+//        String key = getConversationDirCacheKey(httpRequest);
+//        key = key + ":" + conversationId;
+//        return key;
     }
 
     /**
@@ -340,7 +370,8 @@ public class AiragChatServiceImpl implements IAiragChatService {
             app.setId(AiAppConsts.DEFAULT_APP_ID);
         }
         ChatConversation chatConversation = null;
-        String key = getConversationCacheKey(conversationId, null);
+//        String key = getConversationCacheKey(conversationId, null);
+        String key = conversationId;
         if (oConvertUtils.isNotEmpty(key)) {
             chatConversation = conversationRecordsMapper.getByConversationKey(key);
             if (chatConversation!=null){
@@ -349,7 +380,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
             }
         }
         if (null == chatConversation) {
-            chatConversation = createConversation(conversationId);
+            chatConversation = createConversation(key);
             chatConversation.setIsCreate(true);
         }
         chatConversation.setApp(app);
@@ -365,12 +396,14 @@ public class AiragChatServiceImpl implements IAiragChatService {
      * @date 2025/2/26 15:53
      */
     @NotNull
-    private ChatConversation createConversation(String conversationId) {
+    private ChatConversation createConversation(String conversationKey) {
         // 新会话
-        conversationId = oConvertUtils.getString(conversationId, UUIDGenerator.generate());
+        conversationKey = oConvertUtils.getString(conversationKey, UUIDGenerator.generate());
         ChatConversation chatConversation = new ChatConversation();
-        chatConversation.setId(conversationId);
+        chatConversation.setId(conversationKey);
         chatConversation.setCreateTime(new Date());
+        String[] split = conversationKey.split(":");
+        chatConversation.setTitle(split[3]+":"+split[4]);
         return chatConversation;
     }
 
@@ -405,11 +438,12 @@ public class AiragChatServiceImpl implements IAiragChatService {
         ChatConversation chatRecord = conversationRecordsMapper.getByConversationKey(key);
         String username = getUsername(httpRequest);
         if (chatRecord == null){
-            conversationRecordsMapper.add(chatConversation,key, username,split[0],split[1]);
+            conversationRecordsMapper.add(chatConversation,key, username,split[3],split[4]);
         }else {
             conversationRecordsMapper.updateTitle(chatRecord.getId(),chatConversation.getTitle());
         }
-        if (Boolean.TRUE.equals(chatConversation.isHasReply())){
+        if (Boolean.TRUE.equals(chatConversation.isHasReply()) && !Boolean.TRUE.equals(chatConversation.getSystemNotice())){
+            conversationRecordsMapper.unRead(key);
             Integer reply = conversationRecordsMapper.reply(chatRecord == null ? chatConversation.getId() : chatRecord.getId());
             if (reply==1){
                 conversationRecordsMapper.userReply(username);
@@ -419,10 +453,11 @@ public class AiragChatServiceImpl implements IAiragChatService {
 
             chatConversation.getMessages().stream().filter(e->Boolean.TRUE.equals(e.getAddMessage())).forEach(data->{
                 data.setAddMessage(false);
-                data.setDeviceCode(split[0]);
-                data.setCustomer(split[1]);
+                data.setDeviceCode(split[3]);
+                data.setCustomer(split[4]);
                 data.setMessageStatus(Boolean.TRUE.equals(chatConversation.getIsReply())?4:0);
                 data.setUserName(username);
+                data.setSystemNotice(chatConversation.getSystemNotice());
                 conversationMessageRecordsMapper.add(data);
             });
         }
@@ -518,7 +553,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
         historyMessage.setDatetime(DateUtils.now());
         historyMessage.setAddMessage(true);
         historyMessage.setError(chatConversation.getError());
-        historyMessage.setThirdId(sendParams.getThirdId());
+        historyMessage.setThirdId(Boolean.TRUE.equals(chatConversation.getError())?null:sendParams.getThirdId());
         historyMessage.setMessageStatus(Boolean.TRUE.equals(sendParams.getIsReply())?4:null);
        if (message.type().equals(ChatMessageType.USER)) {
             historyMessage.setRole(AiragConsts.MESSAGE_ROLE_USER);

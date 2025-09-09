@@ -22,8 +22,8 @@ public interface ConversationMessageRecordsMapper extends BaseMapper<Conversatio
     @Select("select * from  conversation_message_records where conversation_id = #{conversationId} ")
     List<ConversationMessageRecords> getByConversationId(String conversationId);
 
-    @Insert("insert into conversation_message_records (conversation_id, topic_id, role, content, datetime,error,device_code,customer,third_id,message_status,user_name) \n" +
+    @Insert("insert into conversation_message_records (conversation_id, topic_id, role, content, datetime,error,device_code,customer,third_id,message_status,user_name,system_notice) \n" +
             "value \n" +
-            "(#{conversationId} ,#{topicId} ,#{role} ,#{content} ,#{datetime},#{error},#{deviceCode} ,#{customer},#{thirdId}   ,#{messageStatus} ,#{userName} )")
+            "(#{conversationId} ,#{topicId} ,#{role} ,#{content} ,#{datetime},#{error},#{deviceCode} ,#{customer},#{thirdId}   ,#{messageStatus} ,#{userName} ,#{systemNotice}  )")
     Integer add(ConversationMessageRecords data);
 }

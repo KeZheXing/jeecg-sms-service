@@ -26,19 +26,19 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
     @Update("update sms_device set task_num=task_num+1,send=send+1 where device_code = #{deviceCode} ")
     void success(String deviceCode);
 
-    @Update("update sms_device set task_num=task_num+1,failed=failed+1 where device_code = #{deviceCode} ")
+    @Update("update sms_device set failed=failed+1 where device_code = #{deviceCode} ")
     void failed(String deviceCode);
 
     @Update("update sms_device set receive=receive+1 where device_code = #{deviceCode} ")
     void receive(String deviceCode);
 
-    @Update("update sms_device set device_status=1 where device_code = #{deviceCode} ")
+    @Update("update sms_device set device_status='y' where device_code = #{deviceCode} ")
     Integer ok(String deviceCode);
 
     @Select("select * from sms_device where device_code = #{deviceCode}")
     SmsDevice getByDeviceCode(String deviceCode);
 
-    @Update("update sms_device set device_status=0 where id = #{id} ")
+    @Update("update sms_device set device_status='N' where id = #{id} ")
     void stop(Integer id);
 
     @Update("update sms_device set last_handle_time =now() where device_code = #{deviceCode} ")
@@ -46,4 +46,7 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
 
     @Select("select * from sms_device where (last_handle_time is null or last_handle_time<date_sub(now(),interval `interval` second )) and device_status = 'Y';")
     List<SmsDevice> getEnableDevice();
+
+    @Update("update sms_device set last_task_id = #{taskId}  where id = #{id} ")
+    void updateLastTaskId(@Param("id") Integer id, @Param("taskId") Integer taskId);
 }

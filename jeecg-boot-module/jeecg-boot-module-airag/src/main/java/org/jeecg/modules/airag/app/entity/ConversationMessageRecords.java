@@ -20,4 +20,6 @@ public class ConversationMessageRecords extends MessageHistory {
 
     private String userName;
 
+    private Boolean systemNotice;
+
 }

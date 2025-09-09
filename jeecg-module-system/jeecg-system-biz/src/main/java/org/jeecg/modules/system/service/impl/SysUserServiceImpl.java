@@ -12,6 +12,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -2433,11 +2434,11 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 		if (reduce){
 			String[] split = chatSendParams.getConversationId().split(":");
 			String thirdId = null;
-			SmsDevice device = deviceMapper.getByDeviceCode(split[0]);
+			SmsDevice device = deviceMapper.getByDeviceCode(split[3]);
 			if (device.getDeviceChannel().equals("0")){
-				thirdId = smsCardSendChannelService.sendMsgOne(username,device.getDeviceCode(),chatSendParams.getContent(),split[1]);
+				thirdId = smsCardSendChannelService.sendMsgOne(username,device.getDeviceCode(),chatSendParams.getContent(),split[4]);
 			}else if (device.getDeviceChannel().equals("1")){
-				thirdId = smsJerryChannelService.sendMsgOne(username,device.getDeviceCode(),chatSendParams.getContent(),split[1]);
+				thirdId = smsJerryChannelService.sendMsgOne(username,device.getDeviceCode(),chatSendParams.getContent(),split[4]);
 			}
 			chatSendParams.setThirdId(thirdId);
 		}
@@ -2460,15 +2461,19 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 		}else if (IMConstants.SMS_DELIVERED.equals(smsCallbackRequest.getEvent())){
 			redisUtil.del(device.getDeviceCode());
 			conversationRecordsMapper.delivered(smsCallbackRequest.getPayload().getMessageId());
+			conversationRecordsMapper.conversationDelivered("airag:chat:"+device.getBindUser()+":"+device.getDeviceCode()+smsCallbackRequest.getPayload().getPhoneNumber());
+			deviceMapper.ok(device.getDeviceCode());
 		}else if (IMConstants.SMS_FAILED.equals(smsCallbackRequest.getEvent())){
 			conversationRecordsMapper.failed(smsCallbackRequest.getPayload().getMessageId());
 			long incr1 = redisUtil.incr(device.getDeviceCode(), 1);
 			if (incr1>3){
 				if (incr1==4){
-					telegramBot.sendToChats(String.format("设备[%s]连续失败三次,暂停设备", device.getDeviceCode()));
+					telegramBot.sendToChats(String.format(" 用户:[%s]的设备 [%s]连续失败三次,暂停设备", device.getBindUser(),device.getDeviceCode()));
+					chatService.systemSend(device.getBindUser(), String.format("[%s]连续失败三次,暂停设备", device.getDeviceCode()));
 				}
 				deviceMapper.stop(device.getId());
 				deviceMapper.failed(device.getDeviceCode());
+				conversationRecordsMapper.conversationFailed("airag:chat:"+device.getBindUser()+":"+device.getDeviceCode()+smsCallbackRequest.getPayload().getPhoneNumber());
 				log.info(String.format("退还费用[%s]", device.getBindUser()));
 				this.recoveryBalance(device.getBindUser());
 			}
@@ -2478,11 +2483,13 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 			deviceMapper.receive(device.getDeviceCode());
 			ChatSendParams chatSendParams = new ChatSendParams();
 			chatSendParams.setIsReply(true);
-			chatSendParams.setFrom(smsCallbackRequest.getPayload().getPhoneNumber().replace("+86","").replace("+61","").replace("+1",""));
+			chatSendParams.setFrom(smsCallbackRequest.getPayload().getPhoneNumber().replace("+",""));
 			chatSendParams.setContent(smsCallbackRequest.getPayload().getMessage());
 			chatSendParams.setDeviceId(device.getDeviceCode());
 			TokenUtils.tempUser.set(device.getBindUser());
-			chatService.reply(chatSendParams);
+			synchronized (chatSendParams.getFrom().intern()){
+				chatService.reply(chatSendParams);
+			}
 			TokenUtils.tempUser.remove();
 		}
 	}

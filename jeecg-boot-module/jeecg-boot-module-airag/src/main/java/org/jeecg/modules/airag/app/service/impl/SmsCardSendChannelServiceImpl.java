@@ -62,7 +62,7 @@ public class SmsCardSendChannelServiceImpl implements ISmsChannelService {
         ChatSendParams chatSendParams = new ChatSendParams();
         chatSendParams.setDeviceId(smsMessageTask.getMessageDeviceCode());
         chatSendParams.setContent(smsMessageTask.getMessageContent());
-        chatSendParams.setConversationId(smsMessageTask.getMessageDeviceCode()+":"+smsMessageTask.getMessageTo());
+        chatSendParams.setConversationId("airag:chat:"+smsMessageTask.getUserName()+":"+smsMessageTask.getMessageDeviceCode()+":"+smsMessageTask.getMessageTo());
         chatSendParams.setFrom(smsMessageTask.getUserName());
         chatSendParams.setThirdId(thirdId);
         TokenUtils.tempUser.set(smsMessageTask.getUserName());

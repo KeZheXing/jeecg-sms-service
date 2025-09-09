@@ -71,4 +71,8 @@ public class ChatConversation {
     private Boolean error;
 
     private String userName;
+
+    private Boolean systemNotice;
+
+    private Boolean unRead;
 }

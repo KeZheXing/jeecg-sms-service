@@ -151,8 +151,10 @@ public class SysUserController {
         Result<IPage<SysUser>> iPageResult = sysUserService.queryPageList(req, queryWrapper, pageSize, pageNo);
         if(!CollectionUtils.isEmpty(iPageResult.getResult().getRecords())){
             iPageResult.getResult().getRecords().forEach(data->{
-                if(data.getReplyTask()==0){
+                if(data.getReplyTask()==0||data.getHandleTask()==0){
                     data.setReplyTask(0);
+                }else if (data.getReplyTask().compareTo(data.getHandleTask())>0){
+                    data.setReplyTask(100);
                 }else {
                     double percentage = (double) data.getReplyTask() / data.getHandleTask() * 100;
                     data.setReplyTask((int) percentage);

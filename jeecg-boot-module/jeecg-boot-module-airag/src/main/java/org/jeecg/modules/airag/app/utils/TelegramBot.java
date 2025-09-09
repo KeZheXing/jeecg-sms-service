@@ -1,10 +1,12 @@
 package org.jeecg.modules.airag.app.utils;
 
+import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.util.SpringContextUtils;
 import org.jeecg.modules.airag.app.entity.SmsDevice;
 import org.jeecg.modules.airag.app.entity.TgMessage;
 import org.jeecg.modules.airag.app.mapper.SmsDeviceMapper;
+import org.jeecg.modules.airag.app.service.IAiragChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
@@ -25,9 +27,9 @@ public class TelegramBot {
 
 
     // 替换为你从BotFather获取的Token
-    private static final String BOT_TOKEN = "7505362943:AAFWTM8jNntYIovjqy4wm1dfx402UBHtX3E";
+    private static final String BOT_TOKEN = "8489242208:AAHrrwoMpr3PuodC2EAv0_F0ewpthp9N_n0";
     // 替换为你的机器人用户名
-    private static final String BOT_USERNAME = "nexon_bot";
+    private static final String BOT_USERNAME = "SMS_ONLINE_TOP_NOTICE_bot ";
 
     public TelegramBot(){
         try {
@@ -68,7 +70,7 @@ public class TelegramBot {
                 List<MessageEntity> entities = update.getMessage().getEntities();
                 if (entities != null) {
                     for (MessageEntity entity : entities) {
-                        if (entity.getType().equalsIgnoreCase("MENTION") && entity.getText().equals("@ppzd_online_sms_bot")) {
+                        if (entity.getType().equalsIgnoreCase("MENTION") && entity.getText().equals("@SMS_ONLINE_TOP_NOTICE_bot")) {
                             // 消息中艾特了机器人
                             log.info("AT 机器人");
                             tgMessage.setAtBot(true);
@@ -88,15 +90,17 @@ public class TelegramBot {
                 return;
             }
             if (tgMessage.getIsGroup()){
-                if (tgMessage.getMessage().endsWith("") && tgMessage.getAtBot()){
+                log.info(JSON.toJSONString(tgMessage));
+                if (tgMessage.getMessage().endsWith("") && Boolean.TRUE.equals(tgMessage.getAtBot())){
                     SmsDeviceMapper deviceMapper = SpringContextUtils.getBean(SmsDeviceMapper.class);
-                    RedisTemplate redisTemplate = SpringContextUtils.getBean(RedisTemplate.class);
+                    IAiragChatService chatService = SpringContextUtils.getBean(IAiragChatService.class);
+                    RedisTemplate redisTemplate = (RedisTemplate) SpringContextUtils.getBean("stringRedisTemplate");
                     Integer effect = deviceMapper.ok(tgMessage.getMessage().split(" ")[1]);
                     if (effect==1){
                         SmsDevice smsdevice = deviceMapper.getByDeviceCode(tgMessage.getMessage().split(" ")[1]);
                         redisTemplate.delete(smsdevice.getDeviceCode());
-                        sendToChats(String.format("设备编号%s 恢复", tgMessage.getMessage().split(" ")[1]));;
-                        sendMsgOne("-1002868299484",tgMessage.getMessage().split(" ")[1]+"—设备已恢复");
+                        sendToChats(String.format("设备编号%s 恢复", tgMessage.getMessage().split(" ")[1]));
+                        chatService.systemSend(smsdevice.getBindUser(),String.format("设备编号%s 恢复", tgMessage.getMessage().split(" ")[1]));
                     }
                 }
             }

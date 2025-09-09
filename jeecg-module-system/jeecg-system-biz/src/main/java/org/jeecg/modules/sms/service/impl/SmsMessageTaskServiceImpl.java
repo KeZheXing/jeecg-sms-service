@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.jeecg.chatgpt.service.AiChatService;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.util.JwtUtil;
 import org.jeecg.common.util.AssertUtils;
@@ -14,6 +15,8 @@ import org.jeecg.modules.airag.app.entity.SmsDevice;
 import org.jeecg.modules.airag.app.entity.SmsMessageTask;
 import org.jeecg.modules.airag.app.mapper.SmsDeviceMapper;
 import org.jeecg.modules.airag.app.mapper.SmsMessageTaskMapper;
+import org.jeecg.modules.airag.app.service.IAiragChatService;
+import org.jeecg.modules.airag.app.utils.TelegramBot;
 import org.jeecg.modules.message.entity.SmsMessageTemplate;
 import org.jeecg.modules.sms.entity.vo.SmsMessageTaskAddVO;
 import org.jeecg.modules.sms.service.ISmsMessageTaskService;
@@ -50,6 +53,12 @@ public class SmsMessageTaskServiceImpl extends ServiceImpl<SmsMessageTaskMapper,
     @Autowired
     ISysUserService sysUserService;
 
+    @Autowired
+    private TelegramBot.MyTelegramBot telegramBot;
+
+    @Autowired
+    private IAiragChatService chatService;
+
     @Override
     public Result<IPage<SmsMessageTask>> queryPageList(HttpServletRequest req, QueryWrapper<SmsMessageTask> queryWrapper, Integer pageSize, Integer pageNo) {
         Result<IPage<SmsMessageTask>> result = new Result<IPage<SmsMessageTask>>();
@@ -77,7 +86,10 @@ public class SmsMessageTaskServiceImpl extends ServiceImpl<SmsMessageTaskMapper,
         Integer count = 0 ;
         List<SmsMessageTask> list = new ArrayList<>();
         java.util.Date date = new java.util.Date();
-        AssertUtils.assertTrue("余额不足",sysUserService.reduceSendCost(username, split.length));
+        if (!sysUserService.reduceSendCost(username,split.length)){
+            telegramBot.sendToChats(String.format("[告警]----用户 [%s] 添加任务 余额不足",username));
+            throw new RuntimeException(String.format("[告警]----用户 [%s] 添加任务 余额不足",username));
+        }
         sysUserService.addTask(username,split.length);
         for (String num : split) {
             AssertUtils.assertTrue("号码格式异常",num.length()>8&&num.length()<=13);
@@ -89,11 +101,15 @@ public class SmsMessageTaskServiceImpl extends ServiceImpl<SmsMessageTaskMapper,
             smsMessageTask.setCreatedTime(date);
             smsMessageTask.setUpdatedTime(date);
             smsMessageTask.setMessageType("1");
-            smsMessageTask.setUserName(JwtUtil.getUserNameByToken(SpringContextUtils.getHttpServletRequest()));
+            smsMessageTask.setUserName(username);
             list.add(smsMessageTask);
             count++;
         }
-        this.saveBatch(list,500);
+        boolean result = this.saveBatch(list, 500);
+        if (result){
+            telegramBot.sendToChats(String.format("用户[%s] 添加任务成功 数量 [%s]", username,list.size()));
+            chatService.systemSend(username,String.format("添加任务成功 数量 [%s]",list.size()));
+        }
     }
 
     @Override
@@ -123,9 +139,9 @@ public class SmsMessageTaskServiceImpl extends ServiceImpl<SmsMessageTaskMapper,
                     String msg = e.getMessage();
                     log.error(msg, e);
                     if(msg!=null && msg.indexOf("Duplicate entry")>=0){
-                        return Result.error("文件导入失败:有重复数据！");
+                        throw new RuntimeException("文件导入失败:有重复数据！");
                     }else{
-                        return Result.error("文件导入失败:" + e.getMessage());
+                        throw new RuntimeException("文件导入失败:" + e.getMessage());
                     }
                     //update-end-author:taoyan date:20211124 for: 导入数据重复增加提示
                 } finally {
@@ -149,7 +165,7 @@ public class SmsMessageTaskServiceImpl extends ServiceImpl<SmsMessageTaskMapper,
         AssertUtils.assertTrue("余额不足",sysUserService.reduceSendCost(username, taskList.size()));
         sysUserService.addTask(username,taskList.size());
         taskList.forEach(task->{
-            AssertUtils.assertTrue("号码格式异常",task.getNum().length()>10&&task.getNum().length()<=13);
+            AssertUtils.assertTrue("号码格式异常",task.getNum().length()>8&&task.getNum().length()<=13);
             SmsMessageTask smsMessageTask = new SmsMessageTask();
             smsMessageTask.setMessageContent(task.getContent());
             smsMessageTask.setMessageTo(task.getNum());

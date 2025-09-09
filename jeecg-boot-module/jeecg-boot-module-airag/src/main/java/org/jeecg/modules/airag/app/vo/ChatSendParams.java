@@ -64,8 +64,10 @@ public class ChatSendParams {
 
     private String thirdId;
 
-    public String buildReplyConversationId() {
-        return this.deviceId + ":" + this.from + "";
+    private String to;
+
+    public String buildReplyConversationId(String bindUser) {
+        return "airag:chat:"+bindUser+":"+this.deviceId + ":" + this.from + "";
     }
 
 }

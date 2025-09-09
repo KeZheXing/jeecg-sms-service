@@ -103,5 +103,7 @@ public interface IAiragChatService {
      */
     Result<?> initChat(String appId);
 
+    void systemSend(String to, String content);
+
     Result reply(ChatSendParams chatReplyParams);
 }
