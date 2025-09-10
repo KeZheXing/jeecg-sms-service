@@ -230,6 +230,9 @@ public interface SysUserMapper extends BaseMapper<SysUser> {
 	@Update("update sys_user set balance = balance + send_cost,failed=failed+1 where username =#{username} ")
 	void recoveryBalance(String username);
 
+	@Update("update sys_user set balance = balance + (${count} * send_cost) where username =#{username} ")
+	void recoveryBalanceBySize(@Param("username") String username,@Param("count") Integer count);
+
 	@Update("update sys_user set receive = receive+1 ,balance=balance-receive_cost where username = #{bindUser} ")
     void callback(String bindUser);
 
@@ -238,4 +241,8 @@ public interface SysUserMapper extends BaseMapper<SysUser> {
 
 	@Update("update sys_user set add_Task = add_task+${length}  where username = #{username} ")
 	void addTask(@Param("username") String username,@Param("length") int length);
+
+	@Update("update sys_user set send=0 ,receive=0,failed =0,add_task=0,handle_task=0,reply_task=0")
+    void timeDataClear();
+
 }

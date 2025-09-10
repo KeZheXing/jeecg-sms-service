@@ -457,7 +457,7 @@ public class AiragChatServiceImpl implements IAiragChatService {
                 data.setCustomer(split[4]);
                 data.setMessageStatus(Boolean.TRUE.equals(chatConversation.getIsReply())?4:0);
                 data.setUserName(username);
-                data.setSystemNotice(chatConversation.getSystemNotice());
+                data.setSystemNotice(chatConversation.getSystemNotice() != null && chatConversation.getSystemNotice());
                 conversationMessageRecordsMapper.add(data);
             });
         }

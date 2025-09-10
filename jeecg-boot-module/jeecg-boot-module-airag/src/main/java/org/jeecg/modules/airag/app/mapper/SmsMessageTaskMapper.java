@@ -1,6 +1,7 @@
 package org.jeecg.modules.airag.app.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import org.jeecg.modules.airag.app.entity.SmsMessageTask;
@@ -28,4 +29,8 @@ public interface SmsMessageTaskMapper extends BaseMapper<SmsMessageTask> {
 
     @Update("update sms_message_task set message_status =2,updated_time=now(),handle_time=now() where id =#{id} ")
     void failed(Integer id);
+
+    @Delete("delete from sms_message_task where message_status = 0 and user_name = #{userName} ")
+
+    Integer clearTask(String userName);
 }

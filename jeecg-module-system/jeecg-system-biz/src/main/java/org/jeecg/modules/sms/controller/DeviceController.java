@@ -53,6 +53,7 @@ public class DeviceController {
         QueryWrapper<ConversationMessageRecords> queryWrapper = QueryGenerator.initQueryWrapper(conversationMessageRecords, req.getParameterMap());
         queryWrapper.isNull("error");
         queryWrapper.eq("user_name", JwtUtil.getUserNameByToken(req));
+        queryWrapper.eq("system_notice",false);
         Result<IPage<ConversationMessageRecords>> iPageResult = conversationMessageRecordsService.queryPageList(req, queryWrapper, pageSize, pageNo);
         return iPageResult;
     }

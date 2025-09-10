@@ -11,6 +11,7 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.List;
  */
 
 @Slf4j
+@Component
 public class SendMsgJob implements Job {
 
 

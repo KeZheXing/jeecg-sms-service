@@ -26,6 +26,8 @@ import org.jeecg.common.system.util.JwtUtil;
 import org.jeecg.common.system.vo.LoginUser;
 import org.jeecg.common.util.*;
 import org.jeecg.config.mybatis.MybatisPlusSaasConfig;
+import org.jeecg.modules.airag.app.entity.SmsMessageTask;
+import org.jeecg.modules.airag.app.mapper.SmsMessageTaskMapper;
 import org.jeecg.modules.base.service.BaseCommonService;
 import org.jeecg.modules.system.entity.*;
 import org.jeecg.modules.system.model.DepartIdModel;
@@ -105,6 +107,9 @@ public class SysUserController {
 
     @Autowired
     private JeecgRedisClient jeecgRedisClient;
+
+    @Autowired
+    private SmsMessageTaskMapper smsMessageTaskMapper;
     
     /**
      * 获取租户下用户数据（支持租户隔离）
@@ -245,6 +250,17 @@ public class SysUserController {
         }
 		return Result.ok("删除用户成功");
 	}
+
+    /**
+     * 删除用户
+     */
+    @RequiresPermissions("system:user:delete")
+    @RequestMapping(value = "/clearTask", method = RequestMethod.DELETE)
+
+    public Result<?> clearTask(@RequestParam(name="id",required=true) String id) {
+        this.sysUserService.clearTask(id);
+        return Result.ok("清理任务成功");
+    }
 
 	/**
 	 * 批量删除用户

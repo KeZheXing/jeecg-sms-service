@@ -501,4 +501,6 @@ public interface ISysUserService extends IService<SysUser> {
 	void addTask(@Param("username") String username, @Param("length") int length);
 
 	void callbackJeery(SmsJerryCallbackRequest smsCallbackRequest);
+
+	void clearTask(String id);
 }

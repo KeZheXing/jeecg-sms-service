@@ -24,6 +24,9 @@ public interface ConversationMessageRecordsMapper extends BaseMapper<Conversatio
 
     @Insert("insert into conversation_message_records (conversation_id, topic_id, role, content, datetime,error,device_code,customer,third_id,message_status,user_name,system_notice) \n" +
             "value \n" +
-            "(#{conversationId} ,#{topicId} ,#{role} ,#{content} ,#{datetime},#{error},#{deviceCode} ,#{customer},#{thirdId}   ,#{messageStatus} ,#{userName} ,#{systemNotice}  )")
+            "(#{conversationId} ,#{topicId} ,#{role} ,#{content} ,now(),#{error},#{deviceCode} ,#{customer},#{thirdId}   ,#{messageStatus} ,#{userName} ,#{systemNotice}  )")
     Integer add(ConversationMessageRecords data);
+
+    @Select("select * from conversation_message_records where device_code order by id desc limit 3")
+    List<ConversationMessageRecords> getLastTask(String deviceCode);
 }

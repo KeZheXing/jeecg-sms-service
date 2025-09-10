@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSON;
 import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -37,9 +38,12 @@ import org.jeecg.common.system.vo.SysUserCacheInfo;
 import org.jeecg.common.util.*;
 import org.jeecg.config.mybatis.MybatisPlusSaasConfig;
 import org.jeecg.modules.airag.app.consts.IMConstants;
+import org.jeecg.modules.airag.app.entity.ConversationMessageRecords;
 import org.jeecg.modules.airag.app.entity.SmsDevice;
+import org.jeecg.modules.airag.app.mapper.ConversationMessageRecordsMapper;
 import org.jeecg.modules.airag.app.mapper.ConversationRecordsMapper;
 import org.jeecg.modules.airag.app.mapper.SmsDeviceMapper;
+import org.jeecg.modules.airag.app.mapper.SmsMessageTaskMapper;
 import org.jeecg.modules.airag.app.service.IAiragChatService;
 import org.jeecg.modules.airag.app.service.ISmsChannelService;
 import org.jeecg.modules.airag.app.service.impl.SmsCardSendChannelServiceImpl;
@@ -139,6 +143,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 	private SysPositionMapper sysPositionMapper;
 	@Autowired
 	private SystemSendMsgHandle systemSendMsgHandle;
+	@Autowired
+	private ConversationMessageRecordsMapper conversationMessageRecordsMapper;
 	
 	@Autowired
 	private ISysThirdAccountService sysThirdAccountService;
@@ -2425,22 +2431,31 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 	@Override
 	@Transactional
 	public SseEmitter send(ChatSendParams chatSendParams) {
+		String[] split = chatSendParams.getConversationId().split(":");
 		String username = JwtUtil.getUsername(TokenUtils.getTokenByRequest(SpringContextUtils.getHttpServletRequest()));
-		Boolean reduce = reduceSendCost(username, 1);
-		if (!reduce){
+		SmsDevice device = deviceMapper.getByDeviceCode(split[3]);
+		boolean result =false;
+		List<ConversationMessageRecords> lastTask = conversationMessageRecordsMapper.getLastTask(device.getDeviceCode());
+		if (lastTask.stream().filter(e -> e.getMessageStatus().equals(0)).count() >= 3) {
+			log.info("设备暂停");
 			chatSendParams.setFailed(true);
-			chatSendParams.setFailedReason("余额不足");
-		}
-		if (reduce){
-			String[] split = chatSendParams.getConversationId().split(":");
-			String thirdId = null;
-			SmsDevice device = deviceMapper.getByDeviceCode(split[3]);
-			if (device.getDeviceChannel().equals("0")){
-				thirdId = smsCardSendChannelService.sendMsgOne(username,device.getDeviceCode(),chatSendParams.getContent(),split[4]);
-			}else if (device.getDeviceChannel().equals("1")){
-				thirdId = smsJerryChannelService.sendMsgOne(username,device.getDeviceCode(),chatSendParams.getContent(),split[4]);
+			chatSendParams.setFailedReason(String.format("设备[%s]已离线",device.getDeviceCode() ));
+			result = false;
+		}else {
+			result = reduceSendCost(username, 1);
+			if (!result){
+				chatSendParams.setFailed(true);
+				chatSendParams.setFailedReason("余额不足");
 			}
-			chatSendParams.setThirdId(thirdId);
+			if (result){
+				String thirdId = null;
+				if (device.getDeviceChannel().equals("0")){
+					thirdId = smsCardSendChannelService.sendMsgOne(username,device.getDeviceCode(),chatSendParams.getContent(),split[4]);
+				}else if (device.getDeviceChannel().equals("1")){
+					thirdId = smsJerryChannelService.sendMsgOne(username,device.getDeviceCode(),chatSendParams.getContent(),split[4]);
+				}
+				chatSendParams.setThirdId(thirdId);
+			}
 		}
 
 		SseEmitter send = chatService.send(chatSendParams);
@@ -2451,6 +2466,10 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 	@Transactional
 	public void callback(SmsCallbackRequest smsCallbackRequest) {
 		long incr = redisUtil.incr(smsCallbackRequest.getId(), 1);
+		if (!smsCallbackRequest.getPayload().getPhoneNumber().startsWith("+61")){
+			log.info("过滤消息:{}", JSON.toJSONString(smsCallbackRequest));
+			return;
+		}
 		if (incr>1){
 			log.info("重复的消息");
 			return;
@@ -2531,5 +2550,16 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 			});
 		}
 
+	}
+
+	@Autowired
+	private SmsMessageTaskMapper smsMessageTaskMapper;
+
+	@Override
+	@Transactional
+	public void clearTask(String id) {
+		SysUser sysUser = this.baseMapper.selectById(id);
+		Integer effect = smsMessageTaskMapper.clearTask(sysUser.getUsername());
+		this.baseMapper.recoveryBalanceBySize(sysUser.getUsername(),effect);
 	}
 }
