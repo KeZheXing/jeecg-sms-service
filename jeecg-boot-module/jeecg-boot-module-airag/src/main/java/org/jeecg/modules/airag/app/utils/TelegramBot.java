@@ -27,9 +27,9 @@ public class TelegramBot {
 
 
     // 替换为你从BotFather获取的Token
-    private static final String BOT_TOKEN = "8489242208:AAHrrwoMpr3PuodC2EAv0_F0ewpthp9N_n0";
+    private static final String BOT_TOKEN = "8275650108:AAH1ppZae_L5QkFUqerKG16jkvylX6P1bWU";
     // 替换为你的机器人用户名
-    private static final String BOT_USERNAME = "SMS_ONLINE_TOP_NOTICE_bot ";
+    private static final String BOT_USERNAME = "ISISKkkk_Nexon_bot ";
 
     public TelegramBot(){
         try {

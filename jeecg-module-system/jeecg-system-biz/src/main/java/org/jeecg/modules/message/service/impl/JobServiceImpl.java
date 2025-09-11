@@ -47,6 +47,9 @@ public class JobServiceImpl implements IJobService {
     @Transactional
     @Override
     public void sendMsgJob() {
+        if (1==1){
+            return;
+        }
         ReentrantLock lock = new ReentrantLock();
         lock.lock();
         List<SmsDevice> deviceList = null;
