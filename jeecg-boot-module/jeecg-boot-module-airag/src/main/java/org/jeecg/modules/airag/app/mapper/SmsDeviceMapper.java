@@ -38,6 +38,9 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
     @Select("select * from sms_device where device_code = #{deviceCode}")
     SmsDevice getByDeviceCode(String deviceCode);
 
+    @Select("select * from sms_device where device_other_info = #{deviceOtherInfo}")
+    SmsDevice getByDeviceOtherInfo(String deviceOtherInfo);
+
     @Update("update sms_device set device_status='N' where id = #{id} ")
     void stop(Integer id);
 
@@ -49,4 +52,7 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
 
     @Update("update sms_device set last_task_id = #{taskId}  where id = #{id} ")
     void updateLastTaskId(@Param("id") Integer id, @Param("taskId") Integer taskId);
+
+    @Select("select * from sms_device where device_status = 'Y' and device_channel = '2'")
+    List<SmsDevice> getCatDevice();
 }

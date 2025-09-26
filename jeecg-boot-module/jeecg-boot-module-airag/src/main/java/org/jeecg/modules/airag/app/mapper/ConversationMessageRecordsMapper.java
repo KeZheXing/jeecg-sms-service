@@ -29,4 +29,10 @@ public interface ConversationMessageRecordsMapper extends BaseMapper<Conversatio
 
     @Select("select * from conversation_message_records where device_code order by id desc limit 3")
     List<ConversationMessageRecords> getLastTask(String deviceCode);
+
+    @Select("select m.*\n" +
+            "from conversation_message_records m\n" +
+            "join sms_device d on d.device_code = m.device_code\n" +
+            "where d.device_channel = 2 and m.message_status=0 and m.third_id is not null and m.datetime > date_sub(now(),interval  15 minute );")
+    List<ConversationMessageRecords> getCatWaitList();
 }

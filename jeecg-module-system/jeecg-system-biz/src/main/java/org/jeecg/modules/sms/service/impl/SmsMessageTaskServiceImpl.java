@@ -121,6 +121,7 @@ public class SmsMessageTaskServiceImpl extends ServiceImpl<SmsMessageTaskMapper,
                 // 获取上传文件对象
                 MultipartFile file = entity.getValue();
                 ImportParams params = new ImportParams();
+                params.setSheetNum(1);
 //                params.setTitleRows(2);
 //                params.setHeadRows(1);
 //                params.setNeedSave(true);

@@ -12,6 +12,7 @@ import org.jeecg.modules.airag.app.mapper.SmsMessageTaskMapper;
 import org.jeecg.modules.airag.app.service.IAiragChatService;
 import org.jeecg.modules.airag.app.service.ISmsChannelService;
 import org.jeecg.modules.airag.app.service.impl.SmsCardSendChannelServiceImpl;
+import org.jeecg.modules.airag.app.service.impl.SmsCatChannelServiceImpl;
 import org.jeecg.modules.airag.app.service.impl.SmsJerryChannelServiceImpl;
 import org.jeecg.modules.airag.app.utils.TelegramBot;
 import org.jeecg.modules.message.service.IJobService;
@@ -35,6 +36,8 @@ public class JobServiceImpl implements IJobService {
     @Autowired
     private SmsCardSendChannelServiceImpl smsCardSendChannelService;
     @Autowired
+    private SmsCatChannelServiceImpl smsCatChannelService;
+    @Autowired
     private ISysUserService userService;
     @Autowired
     private SmsDeviceMapper deviceMapper;
@@ -48,12 +51,14 @@ public class JobServiceImpl implements IJobService {
     private IAiragChatService chatService;
     @Autowired
     private ConversationMessageRecordsMapper conversationMessageRecordsMapper;
-
+    private final ReentrantLock lock = new ReentrantLock();
     @Transactional
     @Override
     public void sendMsgJob() {
-        ReentrantLock lock = new ReentrantLock();
-        lock.lock();
+        boolean lockResult = lock.tryLock();
+        if (!lockResult){
+            return;
+        }
         List<SmsDevice> deviceList = null;
         try {
             synchronized (this) {
@@ -79,6 +84,8 @@ public class JobServiceImpl implements IJobService {
                             thirdId = smsCardSendChannelService.sendMsg(smsMessageTask);
                         } else if (device.getDeviceChannel().equals("1")) {
                             thirdId = smsJerryChannelService.sendMsg(smsMessageTask);
+                        }else if (device.getDeviceChannel().equals("2")) {
+                            thirdId = smsCatChannelService.sendMsg(smsMessageTask);
                         }
                         if (thirdId != null) {
                             smsMessageTaskMapper.success(smsMessageTask.getId());

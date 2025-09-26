@@ -47,6 +47,7 @@ import org.jeecg.modules.airag.app.mapper.SmsMessageTaskMapper;
 import org.jeecg.modules.airag.app.service.IAiragChatService;
 import org.jeecg.modules.airag.app.service.ISmsChannelService;
 import org.jeecg.modules.airag.app.service.impl.SmsCardSendChannelServiceImpl;
+import org.jeecg.modules.airag.app.service.impl.SmsCatChannelServiceImpl;
 import org.jeecg.modules.airag.app.service.impl.SmsJerryChannelServiceImpl;
 import org.jeecg.modules.airag.app.utils.TelegramBot;
 import org.jeecg.modules.airag.app.vo.ChatSendParams;
@@ -165,6 +166,10 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 	private ConversationRecordsMapper conversationRecordsMapper;
 	@Autowired
 	private TelegramBot.MyTelegramBot telegramBot;
+	@Autowired
+	@Lazy
+	private SmsCatChannelServiceImpl smsCatChannelService;
+
 
 	@Override
 	public Result<IPage<SysUser>> queryPageList(HttpServletRequest req, QueryWrapper<SysUser> queryWrapper, Integer pageSize, Integer pageNo) {
@@ -2453,6 +2458,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 					thirdId = smsCardSendChannelService.sendMsgOne(username,device.getDeviceCode(),chatSendParams.getContent(),split[4]);
 				}else if (device.getDeviceChannel().equals("1")){
 					thirdId = smsJerryChannelService.sendMsgOne(username,device.getDeviceCode(),chatSendParams.getContent(),split[4]);
+				}else if (device.getDeviceChannel().equals("2")){
+					thirdId = smsCatChannelService.sendMsgOne(username,device.getDeviceCode(),chatSendParams.getContent(),split[4]);
 				}
 				chatSendParams.setThirdId(thirdId);
 			}
@@ -2466,7 +2473,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 	@Transactional
 	public void callback(SmsCallbackRequest smsCallbackRequest) {
 		long incr = redisUtil.incr(smsCallbackRequest.getId(), 1);
-		if (!smsCallbackRequest.getPayload().getPhoneNumber().startsWith("+61")){
+		if (smsCallbackRequest.getPayload()!=null&&smsCallbackRequest.getPayload().getPhoneNumber()!=null&&!smsCallbackRequest.getPayload().getPhoneNumber().startsWith("+61")){
 			log.info("过滤消息:{}", JSON.toJSONString(smsCallbackRequest));
 			return;
 		}

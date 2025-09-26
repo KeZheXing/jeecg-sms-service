@@ -34,7 +34,7 @@ public interface ConversationRecordsMapper extends BaseMapper<AiragApp> {
     @Update("update conversation_records set title = #{title},update_time = now() where id = #{id} ")
     Integer updateTitle(@Param("id") String id, @Param("title") String title);
 
-    @Select("select * from conversation_records where user_name =#{username} order by system_notice desc,un_read desc, has_reply desc,update_time desc ")
+    @Select("select * from conversation_records where user_name =#{username} order by system_notice desc,un_read desc, has_reply desc,update_time desc limit 200")
     List<ChatConversation> list(String username);
 
     @Delete("delete from conversation_records where conversation_key = #{key} ")

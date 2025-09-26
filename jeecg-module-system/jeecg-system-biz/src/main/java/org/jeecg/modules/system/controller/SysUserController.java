@@ -1971,14 +1971,16 @@ public class SysUserController {
         Result<String> result = new Result<>();
         //获取登录用户名
         String username = JwtUtil.getUserNameByToken(request);
-        SysUser sysUser = sysUserService.getUserByName(username);
-        if(sysUser.getReplyTask()==0){
-            sysUser.setReplyTask(0);
+        SysUser data = sysUserService.getUserByName(username);
+        if(data.getReplyTask()==0||data.getHandleTask()==0){
+            data.setReplyTask(0);
+        }else if (data.getReplyTask().compareTo(data.getHandleTask())>0){
+            data.setReplyTask(100);
         }else {
-            double percentage = (double) sysUser.getReplyTask() / sysUser.getHandleTask() * 100;
-            sysUser.setReplyTask((int) percentage);
+            double percentage = (double) data.getReplyTask() / data.getHandleTask() * 100;
+            data.setReplyTask((int) percentage);
         }
-        return Result.ok(sysUser);
+        return Result.ok(data);
 
     }
 }

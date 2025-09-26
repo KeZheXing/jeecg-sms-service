@@ -44,6 +44,7 @@ public class DeviceController {
     public Result<IPage<SmsDevice>> queryAllPageList(SmsDevice user, @RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
                                                      @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, HttpServletRequest req) {
         QueryWrapper<SmsDevice> queryWrapper = QueryGenerator.initQueryWrapper(user, req.getParameterMap());
+        queryWrapper.orderByDesc("id");
         return deviceService.queryPageList(req, queryWrapper, pageSize, pageNo);
     }
 
@@ -118,6 +119,19 @@ public class DeviceController {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             result.error500("操作失败");
+        }
+        return result;
+    }
+
+    @RequestMapping(value = "/delete", method = RequestMethod.DELETE)
+    public Result<SmsDevice> delete(HttpServletRequest request,@RequestParam(name = "id", required = true) String id) {
+        Result<SmsDevice> result = new Result<SmsDevice>();
+        try {
+            deviceService.removeById(id);
+            result.success("删除成功！");
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            result.error500("删除失败");
         }
         return result;
     }
