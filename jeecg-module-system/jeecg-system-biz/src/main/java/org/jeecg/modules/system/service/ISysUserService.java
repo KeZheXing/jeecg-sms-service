@@ -24,6 +24,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -503,4 +504,6 @@ public interface ISysUserService extends IService<SysUser> {
 	void callbackJeery(SmsJerryCallbackRequest smsCallbackRequest);
 
 	void clearTask(String id);
+
+    boolean reduceSendCostByCost(String username, Integer size, BigDecimal cost);
 }

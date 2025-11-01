@@ -12,6 +12,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.jeecg.modules.system.model.SysUserSysDepartModel;
 import org.jeecg.modules.system.vo.SysUserDepVo;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -226,6 +227,9 @@ public interface SysUserMapper extends BaseMapper<SysUser> {
 
 	@Update("update sys_user set balance = balance-(send_cost*${length}),send=send+${length} where username = #{userName} and balance-(send_cost*${length})>=0")
     Integer reduceSendCost(@Param("userName") String userName, @Param("length") int length);
+
+	@Update("update sys_user set balance = balance-${cost},send=send+${size} where username = #{userName} and balance-${cost}>=0")
+	Integer reduceSendCostByCost(@Param("userName") String userName, @Param("size") int size, @Param("cost") BigDecimal cost);
 
 	@Update("update sys_user set balance = balance + send_cost,failed=failed+1 where username =#{username} ")
 	void recoveryBalance(String username);

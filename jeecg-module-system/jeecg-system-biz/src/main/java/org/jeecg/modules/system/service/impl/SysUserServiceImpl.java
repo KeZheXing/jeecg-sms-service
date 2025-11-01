@@ -91,6 +91,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -2433,12 +2434,39 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 		this.baseMapper.recoveryBalance(username);
 	}
 
+
+	private Integer getSmsFee(String smsContent, String deviceChannel) {
+		if ("0".equals(deviceChannel)) {
+			return 1;
+		}
+		Boolean doubleCount = !smsContent.matches("[\\p{ASCII}]*");
+		int length = smsContent.length();
+		if (doubleCount) {
+			if (length <= 70) {
+				return 1;
+			} else {
+				int other = length - 70;
+				int otherCount = other / 67 + ((other % 67) == 0 ? 0 : 1);
+				return otherCount + 1;
+			}
+		} else {
+			if (length <= 160) {
+				return 1;
+			} else {
+				int other = length - 160;
+				int otherCount = other / 153 + ((other % 153) == 0 ? 0 : 1);
+				return otherCount + 1;
+			}
+		}
+	}
+
 	@Override
 	@Transactional
 	public SseEmitter send(ChatSendParams chatSendParams) {
 		String[] split = chatSendParams.getConversationId().split(":");
 		String username = JwtUtil.getUsername(TokenUtils.getTokenByRequest(SpringContextUtils.getHttpServletRequest()));
 		SmsDevice device = deviceMapper.getByDeviceCode(split[3]);
+		SysUser user = this.baseMapper.getUserByName(username);
 		boolean result =false;
 		List<ConversationMessageRecords> lastTask = conversationMessageRecordsMapper.getLastTask(device.getDeviceCode());
 		if (lastTask.stream().filter(e -> e.getMessageStatus().equals(0)).count() >= 3) {
@@ -2447,7 +2475,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 			chatSendParams.setFailedReason(String.format("设备[%s]已离线",device.getDeviceCode() ));
 			result = false;
 		}else {
-			result = reduceSendCost(username, 1);
+			BigDecimal cost = user.getSendCost().multiply(new BigDecimal(getSmsFee(chatSendParams.getContent(),device.getDeviceChannel()).toString()));
+			result = reduceSendCostByCost(username, 1,cost);
 			if (!result){
 				chatSendParams.setFailed(true);
 				chatSendParams.setFailedReason("余额不足");
@@ -2568,5 +2597,10 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 		SysUser sysUser = this.baseMapper.selectById(id);
 		Integer effect = smsMessageTaskMapper.clearTask(sysUser.getUsername());
 		this.baseMapper.recoveryBalanceBySize(sysUser.getUsername(),effect);
+	}
+
+	@Override
+	public boolean reduceSendCostByCost(String username, Integer size, BigDecimal cost) {
+		return this.baseMapper.reduceSendCostByCost(username,size,cost)==1;
 	}
 }

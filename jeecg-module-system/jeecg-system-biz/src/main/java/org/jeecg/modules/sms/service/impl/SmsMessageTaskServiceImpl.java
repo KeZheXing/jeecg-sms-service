@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
-import org.jeecg.chatgpt.service.AiChatService;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.util.JwtUtil;
 import org.jeecg.common.util.AssertUtils;
@@ -20,6 +19,7 @@ import org.jeecg.modules.airag.app.utils.TelegramBot;
 import org.jeecg.modules.message.entity.SmsMessageTemplate;
 import org.jeecg.modules.sms.entity.vo.SmsMessageTaskAddVO;
 import org.jeecg.modules.sms.service.ISmsMessageTaskService;
+import org.jeecg.modules.system.entity.SysUser;
 import org.jeecg.modules.system.service.ISysUserService;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.entity.ImportParams;
@@ -33,6 +33,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -86,7 +87,8 @@ public class SmsMessageTaskServiceImpl extends ServiceImpl<SmsMessageTaskMapper,
         Integer count = 0 ;
         List<SmsMessageTask> list = new ArrayList<>();
         java.util.Date date = new java.util.Date();
-        if (!sysUserService.reduceSendCost(username,split.length)){
+        
+        if (!reduceSendCost(username,addMessageTask,devices)){
             telegramBot.sendToChats(String.format("[告警]----用户 [%s] 添加任务 余额不足",username));
             throw new RuntimeException(String.format("[告警]----用户 [%s] 添加任务 余额不足",username));
         }
@@ -109,6 +111,42 @@ public class SmsMessageTaskServiceImpl extends ServiceImpl<SmsMessageTaskMapper,
         if (result){
             telegramBot.sendToChats(String.format("用户[%s] 添加任务成功 数量 [%s]", username,list.size()));
             chatService.systemSend(username,String.format("添加任务成功 数量 [%s]",list.size()));
+        }
+    }
+
+    private boolean reduceSendCost(String username, SmsMessageTaskAddVO addMessageTask, List<SmsDevice> devices) {
+        String deviceChannel = devices.get(0).getDeviceChannel();
+        SysUser user = sysUserService.getUserByName(username);
+        //发送数量
+        Integer size = addMessageTask.getTargetNums().split("\n").length;
+        Integer smsFee = getSmsFee(addMessageTask.getMessageContent(), deviceChannel);
+        BigDecimal costs = user.getSendCost().multiply(new BigDecimal(size.toString())).multiply(new BigDecimal(smsFee.toString()));
+        return sysUserService.reduceSendCostByCost(username,size, costs);
+    }
+
+
+    private Integer getSmsFee(String smsContent, String deviceChannel) {
+        if ("0".equals(deviceChannel)) {
+            return 1;
+        }
+        Boolean doubleCount = !smsContent.matches("[\\p{ASCII}]*");
+        int length = smsContent.length();
+        if (doubleCount) {
+            if (length <= 70) {
+                return 1;
+            } else {
+                int other = length - 70;
+                int otherCount = other / 67 + ((other % 67) == 0 ? 0 : 1);
+                return otherCount + 1;
+            }
+        } else {
+            if (length <= 160) {
+                return 1;
+            } else {
+                int other = length - 160;
+                int otherCount = other / 153 + ((other % 153) == 0 ? 0 : 1);
+                return otherCount + 1;
+            }
         }
     }
 
@@ -163,7 +201,15 @@ public class SmsMessageTaskServiceImpl extends ServiceImpl<SmsMessageTaskMapper,
         AtomicReference<Integer> count = new AtomicReference<>(0);
         List<SmsMessageTask> list = new ArrayList<>();
         java.util.Date date = new java.util.Date();
-        AssertUtils.assertTrue("余额不足",sysUserService.reduceSendCost(username, taskList.size()));
+        SysUser user = sysUserService.getUserByName(username);
+        BigDecimal cost = new BigDecimal("0");
+        for (SmsMessageTemplate sms:taskList){
+            Integer smsFee = getSmsFee(sms.getContent(), devices.get(0).getDeviceChannel());
+            BigDecimal singleCost = user.getSendCost().multiply(new BigDecimal(smsFee.toString()));
+            cost.add(singleCost);
+        }
+        Boolean condition = sysUserService.reduceSendCostByCost(username, taskList.size(),cost);
+        AssertUtils.assertTrue("余额不足", condition);
         sysUserService.addTask(username,taskList.size());
         taskList.forEach(task->{
             AssertUtils.assertTrue("号码格式异常",task.getNum().length()>8&&task.getNum().length()<=13);
