@@ -19,6 +19,7 @@ import javax.servlet.http.HttpSession;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
+import org.jeecg.common.api.CommonAPI;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.constant.CommonConstant;
 import org.jeecg.common.constant.DataBaseConstant;
@@ -324,6 +325,12 @@ public class JwtUtil {
 		//update-end-author:taoyan date:20210330 for:多租户ID作为系统变量
 		if(returnValue!=null){returnValue = returnValue + moshi;}
 		return returnValue;
+	}
+
+	public static Boolean isAdmin(String userName){
+		CommonAPI commonAPI = SpringContextUtils.getBean(CommonAPI.class);
+		LoginUser loginUser = commonAPI.getUserByName(userName);
+		return  loginUser.getRoleCode().contains("admin");
 	}
 	
 //	public static void main(String[] args) {

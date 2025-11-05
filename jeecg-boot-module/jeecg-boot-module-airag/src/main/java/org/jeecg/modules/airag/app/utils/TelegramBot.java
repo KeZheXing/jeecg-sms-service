@@ -37,7 +37,7 @@ public class TelegramBot {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
 
             // 注册机器人
-            botsApi.registerBot(new MyTelegramBot());
+//            botsApi.registerBot(new MyTelegramBot());
             System.out.println("机器人已启动，等待消息...");
 
         } catch (TelegramApiException e) {
