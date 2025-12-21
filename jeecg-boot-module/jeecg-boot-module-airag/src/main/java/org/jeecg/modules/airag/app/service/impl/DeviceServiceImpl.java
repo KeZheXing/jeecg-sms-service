@@ -10,6 +10,7 @@ import org.jeecg.chatgpt.service.AiChatService;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.airag.app.consts.IMConstants;
 import org.jeecg.modules.airag.app.entity.SmsDevice;
+import org.jeecg.modules.airag.app.entity.request.MCPortStatusRequest;
 import org.jeecg.modules.airag.app.mapper.SmsDeviceMapper;
 import org.jeecg.modules.airag.app.service.IDeviceService;
 import org.jeecg.modules.airag.app.utils.HttpUtils;
@@ -19,6 +20,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 
 /**
@@ -33,6 +35,7 @@ public class DeviceServiceImpl extends ServiceImpl<SmsDeviceMapper, SmsDevice> i
     private RedisTemplate redisTemplate;
     @Autowired
     private AiChatService chatService;
+
 
     @Override
     public Result<IPage<SmsDevice>> queryPageList(HttpServletRequest req, QueryWrapper<SmsDevice> queryWrapper, Integer pageSize, Integer pageNo) {
@@ -81,4 +84,43 @@ public class DeviceServiceImpl extends ServiceImpl<SmsDeviceMapper, SmsDevice> i
         }
         return null;
     }
+
+    @Override
+    public Result updatePhone(SmsDevice smsDevice) {
+
+        return null;
+    }
+
+    @Override
+    public void callbackMCStatus(String username, List<MCPortStatusRequest> status) {
+        status.forEach(e->{
+            String deviceCode = "MC"+username+"-"+e.getPort();
+            String[] split = e.getPort().split("\\.");
+            String port = split[0];
+            String devicePort = username+"-"+e.getPort();
+            String slotNum = split[1];
+            Integer sig = e.getSig();
+            String slotStatus = e.getActive().toString()+"/"+e.getInserted()+"/"+e.getSlotActive();
+            Integer effect = this.baseMapper.updateDeviceMC(deviceCode, port, sig, slotStatus, e.getSt());
+            if (effect>0){
+//                log.info("更新成功");
+            }else{
+                String deviceOtherInfo = null;
+                if (username.equals("A01")){
+                    deviceOtherInfo = "http://13.228.130.204:52310/goip_get_sms.html?username=root&password=ceshi321@";
+                }else if (username.equals("A02")){
+                    deviceOtherInfo = "http://13.228.130.204:56124/goip_get_sms.html?username=root&password=ceshi321@";
+                }
+                this.baseMapper.addDeviceMC(deviceCode,username, port, sig, slotStatus, e.getSt(),slotNum,devicePort,deviceOtherInfo);
+            }
+            if (e.getInserted().equals(0)){
+                this.baseMapper.clearPhone(username,port);
+            }
+        });
+    }
+
+    public static void main(String[] args) {
+        System.out.println("1.2".split("\\.")[1]);
+    }
+
 }

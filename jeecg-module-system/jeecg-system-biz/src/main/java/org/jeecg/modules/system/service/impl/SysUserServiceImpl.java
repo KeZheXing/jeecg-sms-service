@@ -13,8 +13,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.shiro.SecurityUtils;
@@ -40,12 +40,12 @@ import org.jeecg.config.mybatis.MybatisPlusSaasConfig;
 import org.jeecg.modules.airag.app.consts.IMConstants;
 import org.jeecg.modules.airag.app.entity.ConversationMessageRecords;
 import org.jeecg.modules.airag.app.entity.SmsDevice;
+import org.jeecg.modules.airag.app.entity.SysBalanceRecord;
 import org.jeecg.modules.airag.app.mapper.ConversationMessageRecordsMapper;
 import org.jeecg.modules.airag.app.mapper.ConversationRecordsMapper;
 import org.jeecg.modules.airag.app.mapper.SmsDeviceMapper;
 import org.jeecg.modules.airag.app.mapper.SmsMessageTaskMapper;
 import org.jeecg.modules.airag.app.service.IAiragChatService;
-import org.jeecg.modules.airag.app.service.ISmsChannelService;
 import org.jeecg.modules.airag.app.service.impl.SmsCardSendChannelServiceImpl;
 import org.jeecg.modules.airag.app.service.impl.SmsCatChannelServiceImpl;
 import org.jeecg.modules.airag.app.service.impl.SmsJerryChannelServiceImpl;
@@ -56,9 +56,12 @@ import org.jeecg.modules.airag.app.vo.SmsJerryCallbackRequest;
 import org.jeecg.modules.base.service.BaseCommonService;
 import org.jeecg.modules.jmreport.common.util.OkConvertUtils;
 import org.jeecg.modules.message.handle.impl.SystemSendMsgHandle;
+import org.jeecg.modules.quartz.entity.ListenerRecord;
+import org.jeecg.modules.quartz.job.AsyncJob4;
 import org.jeecg.modules.system.entity.*;
 import org.jeecg.modules.system.mapper.*;
 import org.jeecg.modules.system.model.SysUserSysDepartModel;
+import org.jeecg.modules.system.service.ISysBalanceRecordService;
 import org.jeecg.modules.system.service.ISysRoleIndexService;
 import org.jeecg.modules.system.service.ISysThirdAccountService;
 import org.jeecg.modules.system.service.ISysUserService;
@@ -92,6 +95,8 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -106,7 +111,8 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements ISysUserService {
-	
+	@Autowired
+	private SysBalanceRecordMapper sysBalanceRecordMapper;
 	@Autowired
 	private SysUserMapper userMapper;
 	@Autowired
@@ -165,6 +171,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 	private SmsDeviceMapper deviceMapper;
 	@Autowired
 	private ConversationRecordsMapper conversationRecordsMapper;
+
 	@Autowired
 	private TelegramBot.MyTelegramBot telegramBot;
 	@Autowired
@@ -820,6 +827,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 	@Transactional(rollbackFor = Exception.class)
 	public void saveUser(SysUser user, String selectedRoles, String selectedDeparts, String relTenantIds) {
 		//step.1 保存用户
+//		user.setApiCode(UUID.randomUUID().toString());
 		this.save(user);
 		//获取用户保存前台传过来的租户id并添加到租户
         this.saveUserTenant(user.getId(),relTenantIds);
@@ -2603,4 +2611,121 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 	public boolean reduceSendCostByCost(String username, Integer size, BigDecimal cost) {
 		return this.baseMapper.reduceSendCostByCost(username,size,cost)==1;
 	}
+
+	@Override
+	public Boolean reduceBySmsPrice(String username, BigDecimal price) {
+		return this.baseMapper.reduceBySmsPrice(username,price);
+	}
+
+	@Override
+	public void recoveryBalanceBySmsPrice(String username, BigDecimal price) {
+		Boolean b = this.baseMapper.recoveryBalanceBySmsPrice(username, price);
+	}
+
+	@Override
+	public String getApiCode() {
+		String username = JwtUtil.getUsername(TokenUtils.getTokenByRequest());
+		SysUser user = this.baseMapper.getUserByName(username);
+		if (user.getApiCode()==null){
+			user.setApiCode(UUID.randomUUID().toString());
+			this.baseMapper.updateById(user);
+		}
+		return user.getApiCode();
+	}
+
+	@Override
+	public void addBalance(SysUser user) {
+		Integer effect = this.baseMapper.addBalance(user);
+		if (effect==1){
+			SysUser sysUser = this.baseMapper.getUserByName(user.getUsername());
+			SysBalanceRecord sysBalanceRecord = new SysBalanceRecord();
+			sysBalanceRecord.setChangeBalance(user.getBalance());
+			sysBalanceRecord.setUserName(user.getUsername());
+			sysBalanceRecord.setCreatedBy(JwtUtil.getUsername(TokenUtils.getTokenByRequest()));
+			sysBalanceRecord.setCreatedTime(LocalDateTime.now());
+			sysBalanceRecord.setBalance(sysUser.getBalance());
+			sysBalanceRecordMapper.insert(sysBalanceRecord);
+		}
+	}
+
+	@Override
+	public SysUser getUserByApiToken(String apiToken) {
+		return this.baseMapper.getUserByApiToken(apiToken);
+	}
+
+	@Override
+	public String applyAddBalance(BigDecimal amount) {
+		String randomNum = "0"+getRandomNum();
+		String username = JwtUtil.getUsername(TokenUtils.getTokenByRequest());
+		BigDecimal waitAmount = amount.add(new BigDecimal("0."+randomNum));
+		LocalDate now = LocalDate.now();
+		sysBalanceRecordMapper.createOrder(username,amount,waitAmount,now);
+		SysBalanceRecord order = sysBalanceRecordMapper.getOrder(username, waitAmount, now);
+		return order.getWaitBalance().toPlainString();
+	}
+
+	@Override
+	@Transactional
+	public void autoBalance() {
+		log.info("监听钱包信息");
+		String address = "TKAmUdWj2QvJucDFELNu8HEWi6qe5WZkGZ";
+		String requestAddress = "https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=200&start=0&sort=-timestamp&count=true&filterTokenValue=0&relatedAddress="+address+"&start_timestamp=1675742568000";
+
+		OkHttpClient client = new OkHttpClient().newBuilder()
+				.build();
+		MediaType mediaType = MediaType.parse("text/plain");
+		RequestBody body = RequestBody.create(mediaType, "");
+		Request request = new Request.Builder()
+				.url(requestAddress)
+				.get()
+				.addHeader("User-Agent", "Apifox/1.0.0 (https://apifox.com)")
+				.build();
+		Response response = null;
+		String string = null;
+		try {
+			response = client.newCall(request).execute();
+			string = response.body().string();
+		} catch (IOException e) {
+			log.error("监控错误：",e);
+		}
+
+		JSONObject content = com.alibaba.fastjson.JSON.parseObject(string);
+		Integer total = content.getInteger("total");
+//		log.info("获取内容:{}", com.alibaba.fastjson.JSON.toJSONString(string));
+//		log.info(JSON.toJSONString(string));
+		if (total>0){
+			List<AsyncJob4.ListenerRecordDTO> tokenTransfers = content.getJSONArray("token_transfers").toJavaList(AsyncJob4.ListenerRecordDTO.class);
+			tokenTransfers.forEach(e->{
+				SysBalanceRecord byTransId = sysBalanceRecordMapper.getByTransId(e.getTransactionId());
+				if (byTransId==null){
+					ListenerRecord toEntity = e.toEntity();
+					Long quant = toEntity.getQuant();
+					BigDecimal payAmount = BigDecimal.valueOf(quant).divide(BigDecimal.valueOf(10).pow(toEntity.getTokenDecimal()));
+					SysBalanceRecord record = sysBalanceRecordMapper.getRecordIdByPayAmount(payAmount, LocalDate.now());
+					if (record!=null){
+						record.setHashCode(e.getTransactionId());
+						record.setRecordStatus("0");
+						Integer effect = sysBalanceRecordMapper.updateHash(record);
+						if (effect==1){
+							SysUser user = new SysUser();
+							user.setUsername(record.getUserName());
+							user.setBalance(record.getChangeBalance());
+							this.baseMapper.addBalance(user);
+							SysUser userByName = this.baseMapper.getUserByName(record.getUserName());
+							sysBalanceRecordMapper.updateBalance(record.getRecordId(),userByName.getBalance());
+						}
+					}
+				}
+			});
+		}
+	}
+
+	public String getRandomNum(){
+		Random random = new Random();
+		// 2. 生成 5 位随机数（范围：10000 ~ 99999）
+		// nextInt(90000) 生成 0 ~ 89999 的数，加 10000 后范围变为 10000 ~ 99999
+		int randomNum = random.nextInt(90000) + 10000;
+		return String.valueOf(randomNum);
+	}
+
 }

@@ -38,6 +38,7 @@
     </properties>
 
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/org.jruby.joni/joni -->
         <dependency>
             <groupId>org.telegram</groupId>
             <artifactId>telegrambots</artifactId>

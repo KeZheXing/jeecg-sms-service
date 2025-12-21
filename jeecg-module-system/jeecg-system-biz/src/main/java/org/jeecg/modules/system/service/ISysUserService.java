@@ -506,4 +506,19 @@ public interface ISysUserService extends IService<SysUser> {
 	void clearTask(String id);
 
     boolean reduceSendCostByCost(String username, Integer size, BigDecimal cost);
+
+	Boolean reduceBySmsPrice(String username, BigDecimal price);
+
+	void recoveryBalanceBySmsPrice(String username, BigDecimal price);
+
+	String getApiCode();
+
+    void addBalance(SysUser user);
+
+    SysUser getUserByApiToken(String apiToken);
+
+	String  applyAddBalance(BigDecimal amount);
+
+	void autoBalance();
+
 }

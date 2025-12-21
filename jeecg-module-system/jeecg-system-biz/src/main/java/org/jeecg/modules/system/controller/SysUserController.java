@@ -53,6 +53,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -198,6 +199,31 @@ public class SysUserController {
 		}
 		return result;
 	}
+
+    @RequiresPermissions("system:user:add")
+    @RequestMapping(value = "/addBalance", method = RequestMethod.PUT)
+    public Result addBalance(@RequestBody JSONObject jsonObject) {
+        SysUser user = JSON.parseObject(jsonObject.toJSONString(), SysUser.class);
+        sysUserService.addBalance(user);
+        return Result.ok();
+    }
+
+    @RequestMapping(value = "/applyAddBalance", method = RequestMethod.GET)
+    public Result<String> applyAddBalance(BigDecimal amount) {
+        return Result.ok(sysUserService.applyAddBalance(amount));
+    }
+
+    @RequestMapping(value = "/getBalance", method = RequestMethod.GET)
+    public Result getBalance() {
+        String username = JwtUtil.getUsername(TokenUtils.getTokenByRequest());
+        SysUser userByName = sysUserService.getUserByName(username);
+        return Result.ok(userByName.getBalance());
+    }
+
+    @RequestMapping(value = "/getApiCode")
+    public Result<String> getApiCode() {
+        return Result.ok(sysUserService.getApiCode());
+    }
 
     @RequiresPermissions("system:user:edit")
 	@RequestMapping(value = "/edit", method = {RequestMethod.PUT,RequestMethod.POST})
@@ -998,19 +1024,19 @@ public class SysUserController {
 	@PostMapping("/register")
 	public Result<JSONObject> userRegister(@RequestBody JSONObject jsonObject, SysUser user) {
 		Result<JSONObject> result = new Result<JSONObject>();
-		String phone = jsonObject.getString("phone");
-		String smscode = jsonObject.getString("smscode");
+//		String phone = jsonObject.getString("phone");
+//		String smscode = jsonObject.getString("smscode");
 
         //update-begin-author:taoyan date:2022-9-13 for: VUEN-2245 【漏洞】发现新漏洞待处理20220906
-		String redisKey = CommonConstant.PHONE_REDIS_KEY_PRE+phone;
-		Object code = redisUtil.get(redisKey);
+//		String redisKey = CommonConstant.PHONE_REDIS_KEY_PRE+phone;
+//		Object code = redisUtil.get(redisKey);
         //update-end-author:taoyan date:2022-9-13 for: VUEN-2245 【漏洞】发现新漏洞待处理20220906
 
 		String username = jsonObject.getString("username");
 		//未设置用户名，则用手机号作为用户名
-		if(oConvertUtils.isEmpty(username)){
-            username = phone;
-        }
+//		if(oConvertUtils.isEmpty(username)){
+//            username = phone;
+//        }
         //未设置密码，则随机生成一个密码
 		String password = jsonObject.getString("password");
 		if(oConvertUtils.isEmpty(password)){
@@ -1023,12 +1049,12 @@ public class SysUserController {
 			result.setSuccess(false);
 			return result;
 		}
-		SysUser sysUser2 = sysUserService.getUserByPhone(phone);
-		if (sysUser2 != null) {
-			result.setMessage("该手机号已注册");
-			result.setSuccess(false);
-			return result;
-		}
+//		SysUser sysUser2 = sysUserService.getUserByPhone(phone);
+//		if (sysUser2 != null) {
+//			result.setMessage("该手机号已注册");
+//			result.setSuccess(false);
+//			return result;
+//		}
 
 		if(oConvertUtils.isNotEmpty(email)){
             SysUser sysUser3 = sysUserService.getUserByEmail(email);
@@ -1038,16 +1064,16 @@ public class SysUserController {
                 return result;
             }
         }
-        if(null == code){
-            result.setMessage("手机验证码失效，请重新获取");
-            result.setSuccess(false);
-            return result;
-        }
-		if (!smscode.equals(code.toString())) {
-			result.setMessage("手机验证码错误");
-			result.setSuccess(false);
-			return result;
-		}
+//        if(null == code){
+//            result.setMessage("手机验证码失效，请重新获取");
+//            result.setSuccess(false);
+//            return result;
+//        }
+//		if (!smscode.equals(code.toString())) {
+//			result.setMessage("手机验证码错误");
+//			result.setSuccess(false);
+//			return result;
+//		}
 
         String realname = jsonObject.getString("realname");
         if(oConvertUtils.isEmpty(realname)){
@@ -1063,11 +1089,11 @@ public class SysUserController {
 			user.setRealname(realname);
 			user.setPassword(passwordEncode);
 			user.setEmail(email);
-			user.setPhone(phone);
+//			user.setPhone(phone);
 			user.setStatus(CommonConstant.USER_UNFREEZE);
 			user.setDelFlag(CommonConstant.DEL_FLAG_0);
 			user.setActivitiSync(CommonConstant.ACT_SYNC_1);
-			sysUserService.addUserWithRole(user,"");//默认临时角色 test
+			sysUserService.addUserWithRole(user,"1962183540284903426");//默认临时角色 test
 			result.success("注册成功");
 		} catch (Exception e) {
 			result.error500("注册失败");

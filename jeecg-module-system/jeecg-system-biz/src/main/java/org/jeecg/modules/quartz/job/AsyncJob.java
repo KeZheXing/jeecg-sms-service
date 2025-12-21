@@ -1,8 +1,28 @@
 package org.jeecg.modules.quartz.job;
 
+import cn.hutool.core.collection.CollectionUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
-import org.jeecg.common.util.DateUtils;
+import org.jeecg.modules.airag.app.entity.SmsDevice;
+import org.jeecg.modules.airag.app.entity.request.MCPortStatusRequest;
+import org.jeecg.modules.airag.app.mapper.SmsDeviceMapper;
+import org.jeecg.modules.airag.app.utils.HttpUtils;
+import org.jeecg.modules.sms.entity.bo.SmsCodeMatchBO;
+import org.jeecg.modules.sms.entity.bo.SmsStockBO;
+import org.jeecg.modules.sms.mapper.SmsRentMapper;
+import org.jeecg.modules.sms.mapper.SmsTemplateMapper;
+import org.jeecg.modules.system.mapper.SysDictItemMapper;
 import org.quartz.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @Description: 同步定时任务测试
@@ -14,22 +34,39 @@ import org.quartz.*;
  * @author: taoyan
  * @date: 2020年06月19日
  */
-@PersistJobDataAfterExecution
-@DisallowConcurrentExecution
+//@PersistJobDataAfterExecution
+//@DisallowConcurrentExecution
 @Slf4j
+@Component
 public class AsyncJob implements Job {
 
+    @Autowired
+    private SmsRentMapper smsRentMapper;
+    @Autowired
+    private SmsTemplateMapper smsTemplateMapper;
+    @Autowired
+    private SmsDeviceMapper smsDeviceMapper;
+    private static HashMap<String,String> map = new HashMap();
+    private static HashMap<String,Integer> nextIdMap = new HashMap();
     @Override
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
-        log.info(" --- 同步任务调度开始 --- ");
-        try {
-            //此处模拟任务执行时间 5秒  任务表达式配置为每秒执行一次：0/1 * * * * ? *
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        String uuid = UUID.randomUUID().toString();
+        List<SmsStockBO> stock1 = smsRentMapper.getStock1();
+        List<SmsStockBO> stock2 = smsRentMapper.getStock2();
+        List<SmsStockBO> stock3 = smsRentMapper.getStock3();
+        List<SmsStockBO> stock = new ArrayList<>();
+        stock.addAll(stock1);
+        stock.addAll(stock2);
+        stock.addAll(stock3);
+        if (stock!=null){
+            stock.forEach(e->{
+                smsTemplateMapper.updateStock(e.getTemplateCode(),e.getCount(),uuid);
+            });
         }
-        //测试发现 每5秒执行一次
-        log.info(" --- 执行完毕，时间："+DateUtils.now()+"---");
+        smsDeviceMapper.clearStock(uuid);
+        smsRentMapper.clearCode();
+//        getCode();
+//        getStatus();
     }
 
 }

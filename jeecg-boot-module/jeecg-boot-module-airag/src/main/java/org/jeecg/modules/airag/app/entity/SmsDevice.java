@@ -86,4 +86,19 @@ public class SmsDevice implements Serializable {
 
     private String deviceOtherInfo;
 
+    private Integer rentType;
+
+    private String phone;
+
+    private Integer portStatus;
+
+    private Integer sig;
+
+    private String slotStatus;
+
+    private String devicePort;
+
+    private String slotNum;
+
+    private Boolean needActive;
 }

@@ -11,8 +11,10 @@ import org.springframework.core.env.Environment;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 
 /**
 * 单体启动类（采用此类启动为单体模式）
@@ -27,6 +29,9 @@ public class JeecgSystemApplication extends SpringBootServletInitializer {
     }
 
     public static void main(String[] args) throws UnknownHostException {
+        // 1. 设置全局默认时区（Java 8+）
+        ZoneId zoneId = ZoneId.of("Asia/Shanghai");
+        TimeZone.setDefault(TimeZone.getTimeZone(zoneId)); // 兼容旧 API
         SpringApplication app = new SpringApplication(JeecgSystemApplication.class);
         Map<String, Object> defaultProperties = new HashMap<>();
         defaultProperties.put("management.health.elasticsearch.enabled", false);

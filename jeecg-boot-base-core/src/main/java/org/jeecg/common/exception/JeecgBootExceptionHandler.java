@@ -9,6 +9,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.authz.UnauthorizedException;
 import org.jeecg.common.api.dto.LogDTO;
 import org.jeecg.common.api.vo.Result;
+import org.jeecg.common.api.vo.ResultApi;
 import org.jeecg.common.constant.CommonConstant;
 import org.jeecg.common.constant.enums.ClientTerminalTypeEnum;
 import org.jeecg.common.enums.SentinelErrorInfoEnum;
@@ -137,6 +138,20 @@ public class JeecgBootExceptionHandler {
 		//update-end---author:zyf ---date:20220411  for：处理Sentinel限流自定义异常
 		addSysLog(e);
 		return Result.error("操作失败，"+e.getMessage());
+	}
+
+	@ExceptionHandler(RuntimeException.class)
+	public ResultApi<?> handleException2(RuntimeException e){
+//		log.error(e.getMessage(), e);
+		//update-begin---author:zyf ---date:20220411  for：处理Sentinel限流自定义异常
+		Throwable throwable = e.getCause();
+		SentinelErrorInfoEnum errorInfoEnum = SentinelErrorInfoEnum.getErrorByException(throwable);
+		if (ObjectUtil.isNotEmpty(errorInfoEnum)) {
+			return ResultApi.error(errorInfoEnum.getError());
+		}
+		//update-end---author:zyf ---date:20220411  for：处理Sentinel限流自定义异常
+		addSysLog(e);
+		return ResultApi.error(e.getMessage());
 	}
 	
 	/**

@@ -9,6 +9,7 @@ import org.jeecg.modules.airag.app.mapper.SmsDeviceMapper;
 import org.jeecg.modules.airag.app.service.IAiragChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -27,9 +28,9 @@ public class TelegramBot {
 
 
     // 替换为你从BotFather获取的Token
-    private static final String BOT_TOKEN = "8489242208:AAHrrwoMpr3PuodC2EAv0_F0ewpthp9N_n0";
+    private static final String BOT_TOKEN = "8450567942:AAH60DJ-BV5FkNQqm1EqPMkqZ-Fj_uDDa3w";
     // 替换为你的机器人用户名
-    private static final String BOT_USERNAME = "SMS_ONLINE_TOP_NOTICE_bot ";
+    private static final String BOT_USERNAME = "SM_SMS_BALANCE_bot ";
 
     public TelegramBot(){
         try {
@@ -37,7 +38,7 @@ public class TelegramBot {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
 
             // 注册机器人
-            botsApi.registerBot(new MyTelegramBot());
+//            botsApi.registerBot(new MyTelegramBot());
             System.out.println("机器人已启动，等待消息...");
 
         } catch (TelegramApiException e) {
@@ -106,9 +107,10 @@ public class TelegramBot {
             }
 
         }
-
+        @Async
         public void sendToChats(String text) {
-            sendMsgOne("-1002508407739", text);
+            sendMsgOne("-1003303163959", text);
+            sendMsgOne("-1003277328277", text);
         }
 
         public void sendMsgOne(String uid, String text) {

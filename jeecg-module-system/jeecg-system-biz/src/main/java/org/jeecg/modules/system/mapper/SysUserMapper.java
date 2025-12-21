@@ -249,4 +249,17 @@ public interface SysUserMapper extends BaseMapper<SysUser> {
 	@Update("update sys_user set send=0 ,receive=0,failed =0,add_task=0,handle_task=0,reply_task=0")
     void timeDataClear();
 
+	@Update("update sys_user set balance = balance-#{price}  where username = #{username} and balance -#{price} >=0")
+    Boolean reduceBySmsPrice(@Param("username") String username,@Param("price") BigDecimal price);
+
+	@Update("update sys_user set balance = balance+#{price}  where username = #{username} ")
+	Boolean recoveryBalanceBySmsPrice(@Param("username") String username,@Param("price") BigDecimal price);
+
+	@Update("update sys_user set balance = balance+#{balance}  where username = #{username} ")
+    Integer addBalance(SysUser user);
+
+
+	@Select("select *\n" +
+			"from sys_user where api_code=#{apiToken} ;")
+	SysUser getUserByApiToken(String apiToken);
 }

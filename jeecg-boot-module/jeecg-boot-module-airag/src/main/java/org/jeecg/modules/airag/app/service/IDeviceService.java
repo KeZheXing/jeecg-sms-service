@@ -6,9 +6,11 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.airag.app.entity.SmsDevice;
+import org.jeecg.modules.airag.app.entity.request.MCPortStatusRequest;
 import org.jeecg.modules.airag.app.vo.SmsCallbackRequest;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * @Author: KKKKK
@@ -22,4 +24,9 @@ public interface IDeviceService extends IService<SmsDevice> {
     Boolean debug(SmsDevice device);
 
     Result<IPage<SmsDevice>> callback(SmsCallbackRequest smsCallbackRequest);
+
+    Result updatePhone(SmsDevice smsDevice);
+
+    void callbackMCStatus(String username, List<MCPortStatusRequest> status);
+
 }

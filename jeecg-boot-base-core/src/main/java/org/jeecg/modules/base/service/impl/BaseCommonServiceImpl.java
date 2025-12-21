@@ -37,7 +37,7 @@ public class BaseCommonServiceImpl implements BaseCommonService {
         //保存日志（异常捕获处理，防止数据太大存储失败，导致业务失败）JT-238
         try {   
             logDTO.setCreateTime(new Date());
-            baseCommonMapper.saveLog(logDTO);
+//            baseCommonMapper.saveLog(logDTO);
         } catch (Exception e) {
             log.warn(" LogContent length : "+logDTO.getLogContent().length());
             log.warn(e.getMessage());
@@ -86,7 +86,7 @@ public class BaseCommonServiceImpl implements BaseCommonService {
         sysLog.setCreateTime(new Date());
         //保存日志（异常捕获处理，防止数据太大存储失败，导致业务失败）JT-238
         try {
-            baseCommonMapper.saveLog(sysLog);
+//            baseCommonMapper.saveLog(sysLog);
         } catch (Exception e) {
             log.warn(" LogContent length : "+sysLog.getLogContent().length());
             log.warn(e.getMessage());

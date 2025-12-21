@@ -22,4 +22,8 @@ public class ConversationMessageRecords extends MessageHistory {
 
     private Boolean systemNotice;
 
+    private String templateName;
+
+    private String templateCode;
+
 }
