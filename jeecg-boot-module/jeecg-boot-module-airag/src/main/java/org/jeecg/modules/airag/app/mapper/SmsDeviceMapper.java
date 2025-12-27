@@ -33,7 +33,7 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
     @Update("update sms_device set receive=receive+1 where device_code = #{deviceCode} ")
     void receive(String deviceCode);
 
-    @Update("update sms_device set device_status='y' where device_code = #{deviceCode} ")
+    @Update("update sms_device set device_status='Y' where device_code = #{deviceCode} ")
     Integer ok(String deviceCode);
 
     @Select("select * from sms_device where device_code = #{deviceCode}")
@@ -91,7 +91,7 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
 
     @Select("select d.id,d.device_other_info,d.device_port,d.device_user_name,d.device_id,d.slot_num\n" +
             "from sms_device d\n" +
-            "where d.slot_status in ('0/1/1') and  not exists(select r.rent_id from sms_rent r where r.device_port = d.device_port and r.rent_status=0) and d.device_status='Y' and phone is null and d.need_active=true  \n")
+            "where d.slot_status in ('0/1/1') and notice_time>date_sub(now(),interval 5 minute ) and  not exists(select r.rent_id from sms_rent r where r.device_port = d.device_port and r.rent_status=0) and d.device_status='Y' and phone is null and d.need_active=true  \n")
     List<SmsDevice> needUpdatePhoneList();
 
     @Update("update sms_device set need_active = false where id = #{id}")

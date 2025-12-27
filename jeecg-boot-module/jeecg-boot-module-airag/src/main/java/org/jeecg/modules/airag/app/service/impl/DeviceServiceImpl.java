@@ -109,7 +109,7 @@ public class DeviceServiceImpl extends ServiceImpl<SmsDeviceMapper, SmsDevice> i
                 if (username.equals("A01")){
                     deviceOtherInfo = "http://13.228.130.204:52310/goip_get_sms.html?username=root&password=ceshi321@";
                 }else if (username.equals("A02")){
-                    deviceOtherInfo = "http://13.228.130.204:56124/goip_get_sms.html?username=root&password=ceshi321@";
+                    deviceOtherInfo = "http://13.228.130.204:58086/goip_get_sms.html?username=root&password=ceshi321@";
                 }
                 this.baseMapper.addDeviceMC(deviceCode,username, port, sig, slotStatus, e.getSt(),slotNum,devicePort,deviceOtherInfo);
             }

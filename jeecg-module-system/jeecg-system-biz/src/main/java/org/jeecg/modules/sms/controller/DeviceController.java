@@ -48,7 +48,7 @@ public class DeviceController {
     public Result<IPage<SmsDevice>> queryAllPageList(SmsDevice user, @RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
                                                      @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, HttpServletRequest req) {
         QueryWrapper<SmsDevice> queryWrapper = QueryGenerator.initQueryWrapper(user, req.getParameterMap());
-        queryWrapper.orderByDesc("id");
+        queryWrapper.orderByAsc("device_user_name","device_id","slot_num");
         return deviceService.queryPageList(req, queryWrapper, pageSize, pageNo);
     }
 
