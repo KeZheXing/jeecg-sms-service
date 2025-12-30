@@ -275,8 +275,11 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
         if (!CollectionUtil.isEmpty(info)){
             info.forEach(e->{
                 if (content.contains(e.getTemplateContent())){
-                    String captcha = extractDigitsByLength(content.replace("-",""), e.getCaptchaLength());
-                    if (captcha.length()==e.getCaptchaLength()){
+                    String[] split1 = e.getCaptchaLength().split("-");
+                    int minLength = Integer.parseInt(split1[0]);
+                    int maxLength = Integer.parseInt(split1.length!=1?split1[1]:split1[0]);
+                    String captcha = extractDigitsByLength(content.replace("-",""), minLength,maxLength);
+                    if (captcha.length()<=maxLength && captcha.length()>=minLength){
                         this.baseMapper.updateCode(e.getRentId(),captcha, content);
                     }
                 }
@@ -304,14 +307,14 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
 
     private boolean updatePhone(String username, String port,String slot, String content) {
         if (content.startsWith("TATE?state=NewAccount;server")){
-            String phone = extractDigitsByLength(content, 11);
+            String phone = extractDigitsByLength(content, 11,11);
             Integer effect = smsDeviceMapper.updatePhone(username, port, phone,slot);
             if (effect==1){
                 telegramBot.sendToChats(String.format("设备[%s] 端口[%s] 卡槽[%s] 更新手机号 [%s] ", username,port,slot,phone));
             }
             return true;
         }else if (content.startsWith("Welcome to Vodafone! Your new number is")){
-            String phone = extractDigitsByLength(content, 10);
+            String phone = extractDigitsByLength(content, 10,10);
             Integer effect = smsDeviceMapper.updatePhone(username, port, "61" + phone.replaceFirst(Pattern.quote("0"), ""), slot);
             if (effect==1){
                 telegramBot.sendToChats(String.format("设备[%s] 端口[%s] 卡槽[%s] 更新手机号 [%s] ", username,port,slot,phone));
@@ -343,23 +346,25 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
      * @return 符合长度的所有数字列表，无匹配则返回空列表
      * @throws IllegalArgumentException 如果长度为非正整数，抛出异常
      */
-    public static String extractDigitsByLength(String text, int length) {
-        // 校验入参合法性
-        if (length <= 0) {
-            throw new IllegalArgumentException("数字长度必须为正整数（length > 0）");
+    public static String extractDigitsByLength(String text,  int minLen, int maxLen) {
+        // 入参校验
+        if (minLen <= 0 || maxLen <= 0) {
+            throw new IllegalArgumentException("数字最小/最大长度必须为正整数！");
+        }
+        if (minLen > maxLen) {
+            throw new IllegalArgumentException("最小长度不能大于最大长度！");
         }
         if (text == null || text.isEmpty()) {
-            return null; // 空文本返回空列表
+            return null;
         }
 
-        // 动态生成正则表达式：\d{length}（例如length=11时，表达式为\d{11}）
-        String regex = "\\d{" + length + "}";
+        // 核心：6-8位匹配正则 \\d{6,8}
+        String regex = "\\d{" + minLen + "," + maxLen + "}";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(text);
 
-        // 提取所有匹配的数字
-        List<String> result = new ArrayList<>();
-        while (matcher.find()) {
+        // 找到第一个匹配项就返回，找不到返回null
+        if (matcher.find()) {
             return matcher.group();
         }
         return null;

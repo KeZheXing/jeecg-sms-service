@@ -213,28 +213,6 @@ public class SmsRentApiServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> i
 
     @Override
     public void callbackMC(List<String> data, String username) {
-        if ("0".equals(data.get(0))){
-
-        }
-        String[] split = data.get(1).split("\\.");
-        String port = split[0];
-        String slot = split[1];
-        String content = new String(Base64.getDecoder().decode(data.get(5).getBytes())).split("\n")[6].replace("-","");
-        log.info("收到消息 {} {} {}",port,slot,content,username);
-        List<SmsCodeMatchBO> info = this.baseMapper.getRentInfoByWait(port,username);
-        if (updatePhone(username,port,slot,content)){
-            return;
-        }
-        if (!CollectionUtil.isEmpty(info)){
-            info.forEach(e->{
-                if (countDifferentCharacters(e.getTemplateContent(),content)==e.getCaptchaLength()){
-                    String difference = content.substring(e.getTemplateContent().indexOf(e.getPlaceholder()),e.getCaptchaLength());
-                    if (difference.length()==e.getCaptchaLength()){
-                        this.baseMapper.updateCode(e.getRentId(),difference,content);
-                    }
-                }
-            });
-        }
 
     }
 

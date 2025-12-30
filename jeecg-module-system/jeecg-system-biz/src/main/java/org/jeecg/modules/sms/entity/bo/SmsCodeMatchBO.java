@@ -13,6 +13,6 @@ public class SmsCodeMatchBO {
 
     private  String placeholder; // 验证码占位符（如"xxxxxx"）
 
-    private  Integer captchaLength; // 验证码固定长度（简化匹配，也可支持范围）
+    private  String captchaLength; // 验证码固定长度（简化匹配，也可支持范围）
     private String  captchaPatternStr;
 }
