@@ -171,7 +171,13 @@ public class SmsRentApiServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> i
     @Transactional
     public ResultApi blackNum(Integer rendId, String apiToken) {
         String username = checkApiToken(apiToken);
-        Integer effect = this.baseMapper.blackNum(rendId, username);
+        SmsRent getSmsRent = this.baseMapper.selectById(rendId);
+        Integer effect = 0;
+        if (getSmsRent.getProjectCode().toLowerCase().equals("nab")&&!getSmsRent.getContent().contains("Your NAB secret code")){
+            effect = this.baseMapper.blackNumNab(rendId,username);
+        }else {
+            effect = this.baseMapper.blackNum(rendId, username);
+        }
         if (effect!=1){
             ResultApi<Object> error = ResultApi.error("拉黑失败");
             error.setStatus("not_allowed");
@@ -233,7 +239,8 @@ public class SmsRentApiServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> i
             ResultApi ok = ResultApi.ok("验证码已到达");
             ok.setStatus("received");
             JSONObject jsonObject = new JSONObject();
-            jsonObject.put("code",rent.getCode());
+            String[] split = rent.getCode().split("\n");
+            jsonObject.put("code", split[split.length-1]);
             ok.setResult(jsonObject);
             return ok;
         }

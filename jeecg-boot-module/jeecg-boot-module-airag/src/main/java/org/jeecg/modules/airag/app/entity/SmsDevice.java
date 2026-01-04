@@ -101,4 +101,10 @@ public class SmsDevice implements Serializable {
     private String slotNum;
 
     private Boolean needActive;
+
+    @TableField(exist = false)
+    private Boolean showActive;
+
+    @TableField(exist = false)
+    private Boolean hasPhone;
 }

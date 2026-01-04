@@ -215,9 +215,12 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
     public void blackNum(Integer rendId) {
         String username = JwtUtil.getUsername(TokenUtils.getTokenByRequest());
         Set<String> roles = commonAPI.queryUserRoles(username);
+        SmsRent getSmsRent = this.baseMapper.selectById(rendId);
         Integer effect = 0;
         if (roles != null && roles.contains("admin")) {
             effect = this.baseMapper.blackNumNotUser(rendId);
+        }else if (getSmsRent.getProjectCode().toLowerCase().equals("nab")&&!getSmsRent.getContent().contains("Your NAB secret code")){
+            effect = this.baseMapper.blackNumNab(rendId,username);
         }else {
             effect = this.baseMapper.blackNum(rendId, username);
         }
@@ -288,6 +291,9 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
 
     }
 
+
+
+
     @Override
     @Transactional
     public Result<Boolean> addTime(SmsRent smsRent) {
@@ -335,9 +341,6 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
 //        smsCodeMatchBO.setCaptchaLength();
     }
 
-    public static void main(String[] args) {
-        System.out.println("000".replaceFirst(Pattern.quote("0"),"1"));
-    }
 
     /**
      * 从文本中提取所有指定长度的连续数字

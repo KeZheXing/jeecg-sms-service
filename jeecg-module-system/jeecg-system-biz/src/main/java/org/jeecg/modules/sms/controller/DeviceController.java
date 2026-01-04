@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +48,25 @@ public class DeviceController {
     @RequestMapping(value = "/listAll", method = RequestMethod.GET)
     public Result<IPage<SmsDevice>> queryAllPageList(SmsDevice user, @RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
                                                      @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, HttpServletRequest req) {
-        QueryWrapper<SmsDevice> queryWrapper = QueryGenerator.initQueryWrapper(user, req.getParameterMap());
-        queryWrapper.orderByAsc("device_user_name","device_id","slot_num");
+        Map<String, String[]> parameterMap = req.getParameterMap();
+        parameterMap.remove("column");
+        parameterMap.remove("order");
+        QueryWrapper<SmsDevice> queryWrapper = QueryGenerator.initQueryWrapper(user, parameterMap);
+        if (user.getShowActive()!=null){
+            if (user.getShowActive()){
+                queryWrapper.ge("notice_time", LocalDateTime.now().minusMinutes(5));
+            }else {
+                queryWrapper.le("notice_time", LocalDateTime.now().minusMinutes(5));
+            }
+        }
+        if (user.getHasPhone()!=null){
+            if (!user.getHasPhone()){
+                queryWrapper.isNull("phone");
+            }else {
+                queryWrapper.isNotNull("phone");
+            }
+        }
+        queryWrapper.orderByAsc("device_user_name").orderByAsc("device_id").orderByAsc("slot_num");
         return deviceService.queryPageList(req, queryWrapper, pageSize, pageNo);
     }
 

@@ -62,7 +62,7 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
             "where ((r.rent_status in (0,98,99) and (r.expired_time>now() or (r.wakeup_expire_time is not null and wakeup_expire_time>now())))) and d.device_user_name = #{username}  and d.device_id = #{port} ;")
     List<SmsCodeMatchBO> getRentInfoByWait(@Param("port") String port, @Param("username") String username);
 
-    @Update("update sms_rent set code =concat_ws('\n\n',code,#{code} ),content=concat_ws('\n\n',content,#{content}),wakeup_expire_time =null,rent_status = 99,receive_time = now() where rent_id = #{rentId} ")
+    @Update("update sms_rent set code =concat_ws('\n',code,#{code} ),content=concat_ws('\n\n',content,#{content}),wakeup_expire_time =null,rent_status = 99,receive_time = now() where rent_id = #{rentId} ")
     void updateCode(@Param("rentId") Integer rentId,@Param("code") String code,@Param("content") String content);
 
     @Select("select t.template_code,t.template_name,t.price,count(1) as `count` \n" +
@@ -138,4 +138,8 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
 
     @Update("update sms_rent set rent_status = 97 where rent_status = 99 and rent_id =#{rentId} ")
     void waitWakeUp(Integer rentId);
+
+    @Update("update sms_rent set rent_status = 7 ,blacked_time = now() where rent_id = #{rentId}  and user_name = #{username} and rent_status in (0,99)" )
+    Integer blackNumNab(@Param("rentId") Integer rendId,@Param("username") String username);
+
 }

@@ -194,6 +194,11 @@ public class SmsMessageTaskServiceImpl extends ServiceImpl<SmsMessageTaskMapper,
             return Result.error("文件导入失败！");
     }
 
+    public static void main(String[] args) {
+        BigDecimal cost = new BigDecimal("0");
+        System.out.println(cost.add(new BigDecimal("0.07").multiply(new BigDecimal("1"))));
+    }
+
     private void addTask(List<SmsMessageTemplate> taskList) {
         String username = JwtUtil.getUserNameByToken(SpringContextUtils.getHttpServletRequest());
         List<SmsDevice> devices = smsDeviceMapper.getByUserName(username);
@@ -208,6 +213,7 @@ public class SmsMessageTaskServiceImpl extends ServiceImpl<SmsMessageTaskMapper,
             BigDecimal singleCost = user.getSendCost().multiply(new BigDecimal(smsFee.toString()));
             cost.add(singleCost);
         }
+
         Boolean condition = sysUserService.reduceSendCostByCost(username, taskList.size(),cost);
         AssertUtils.assertTrue("余额不足", condition);
         sysUserService.addTask(username,taskList.size());
