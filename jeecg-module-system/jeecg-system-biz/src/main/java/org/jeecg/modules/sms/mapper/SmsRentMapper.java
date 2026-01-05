@@ -25,6 +25,14 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
             " order by rand() limit 1")
     Integer apply(@Param("projectCode") String projectCode, @Param("code") String code, @Param("rentType") String rentType,@Param("username") String username);
 
+    @Update("update sms_device d\n" +
+            "set d.apply_code = #{code}\n" +
+            "where d.rent_type in (${rentType})  and d.device_status='Y'  and d.apply_code is null and (d.phone is not null and d.phone !='0') and d.slot_status in ('1/1/1','0/1/1') and sig>5 \n" +
+            " and not exists(select rent_id from sms_rent r where r.device_port = d.device_port and rent_status = 0 and r.slot_num !=d.slot_num )" +
+            " and not exists(select rent_id from sms_rent r where r.phone = d.phone  and ( (r.user_name = #{username} and r.rent_status in (7,8) ) or (r.rent_status in (0,97,98,99)  ) )and r.project_code=#{projectCode} )" +
+            " order by rand() limit ${num}")
+    Integer applyApi(@Param("projectCode") String projectCode, @Param("code") String code, @Param("rentType") String rentType,@Param("username") String username,@Param("num") Integer num);
+
 
     @Select("select *from sms_rent where apply_code = #{code} ")
     SmsRent getByApplyCode(String code);

@@ -64,7 +64,7 @@ public class AsyncJob implements Job {
             });
         }
         smsDeviceMapper.clearStock(uuid);
-        smsRentMapper.clearCode();
+//        smsRentMapper.clearCode();
 //        getCode();
 //        getStatus();
     }

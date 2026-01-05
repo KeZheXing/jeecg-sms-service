@@ -33,4 +33,6 @@ public interface ISmsRentService extends IService<SmsRent> {
     Result<IPage<SmsRent>> queryBlackAllPageList(HttpServletRequest req, QueryWrapper<SmsRent> queryWrapper, Integer pageSize, Integer pageNo);
 
     Result<String> wakeup(Integer rentId);
+
+    Result<String> applyApi(String projectCode, Integer num);
 }

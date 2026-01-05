@@ -39,4 +39,6 @@ public class SmsRent implements Serializable {
     private String slotNum;
     private String devicePort;
     private LocalDateTime wakeupExpireTime;
+    @TableField(exist = false)
+    private Integer num;
 }

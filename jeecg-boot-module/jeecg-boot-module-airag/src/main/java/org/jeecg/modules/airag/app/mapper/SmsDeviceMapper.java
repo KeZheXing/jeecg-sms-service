@@ -60,6 +60,9 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
     @Select("select * from sms_device where apply_code = #{applyCode} ")
     SmsDevice getByApplyCode(String applyCode);
 
+    @Select("select * from sms_device where apply_code = #{applyCode} ")
+    List<SmsDevice> getByApplyCodeList(String applyCode);
+
     @Update("update sms_device set apply_code = null where apply_code = #{applyCode} ")
     void clearApplyCode(String applyCode);
 

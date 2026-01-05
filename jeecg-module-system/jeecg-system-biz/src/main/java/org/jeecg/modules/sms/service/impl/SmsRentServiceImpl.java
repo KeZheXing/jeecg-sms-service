@@ -9,10 +9,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.apache.ibatis.executor.BatchResult;
 import org.jeecg.common.api.CommonAPI;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.util.JwtUtil;
 import org.jeecg.common.util.TokenUtils;
+import org.jeecg.common.util.encryption.AesEncryptUtil;
 import org.jeecg.modules.airag.app.entity.SmsDevice;
 import org.jeecg.modules.airag.app.entity.SmsPrice;
 import org.jeecg.modules.airag.app.entity.SmsRent;
@@ -34,6 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -139,6 +142,80 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
             return Result.error("端口繁忙..预计空闲时间"+Optional.ofNullable(busySmsRent.getWakeupExpireTime()).orElse(busySmsRent.getExpiredTime()));
         }
 
+    }
+
+    @Override
+    public Result<String> applyApi(String projectCode, Integer num) {
+        if (StringUtils.isBlank(projectCode)|| "请选择".equals(projectCode)){
+            throw new RuntimeException("请选择申请的项目");
+        }
+        if (num==null || num.equals(0)){
+            throw new RuntimeException("数量");
+        }
+        //获取当前操作人
+        String username = JwtUtil.getUsername(TokenUtils.getTokenByRequest());
+        //查询项目
+        SmsTemplate template = smsTemplateMapper.getByCode(projectCode);
+        if (template==null){
+            return null;
+        }
+        SmsPrice smsPrice = smsPriceMapper.getPriceByUserNameAndProjectCode(username,template.getTemplateCode());
+        if (this.baseMapper.waitCount(username,template.getTemplateCode())>= Optional.ofNullable(smsPrice).map(SmsPrice::getQuota).orElse(20)){
+            throw new RuntimeException("当前用户配置的并发额度不足,请联系管理员提升配额");
+        }
+        BigDecimal onePrice = Optional.ofNullable(smsPrice).map(SmsPrice::getPrice).orElse(template.getPrice());
+        Boolean reduceResult = userService.reduceBySmsPrice(username,onePrice.multiply(new BigDecimal(num)));
+        if (!reduceResult){
+            throw new RuntimeException("余额不足");
+        }
+        String applyCode = UUID.randomUUID().toString();
+        String queryRent = String.valueOf(template.getRentType());
+        if (template.getOnlyShort()){
+            queryRent = "0";
+        }else if (template.getRentType().equals(0)){
+            queryRent = "0,1";
+        }else {
+            queryRent = "1";
+        }
+        Integer effect = this.baseMapper.applyApi(projectCode,applyCode,queryRent, username,num);
+        if (effect==null||effect==0||effect<num){
+            throw new RuntimeException(effect==null||effect==0?"暂无资源":("资源不足:剩余"+effect));
+        }
+        List<SmsDevice> deviceList = this.smsDeviceMapper.getByApplyCodeList(applyCode);
+        List<SmsRent> smsRentList = new ArrayList<>();
+        StringBuffer buffer = new StringBuffer();
+        deviceList.forEach(device->{
+            SmsRent smsRent = new SmsRent();
+            smsRent.setPrice(smsPrice==null?template.getPrice():smsPrice.getPrice());
+            smsRent.setPhone(device.getPhone());
+            smsRent.setCreatedTime(LocalDateTime.now());
+            smsRent.setUserName(username);
+            smsRent.setRentType(template.getRentType());
+            smsRent.setProjectCode(template.getTemplateCode());
+            smsRent.setApplyCode(applyCode);
+            smsRent.setDeviceId(String.valueOf(device.getId()));
+            smsRent.setSlotNum(device.getSlotNum());
+            smsRent.setDevicePort(device.getDevicePort());
+            try {
+                buffer.append(device.getPhone()+"----"+"http://44.244.88.77/sms-gateway/sms/rent/code="+ AesEncryptUtil.encrypt(device.getPhone()+"----"+username));
+                buffer.append("\n");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            if (smsRent.getRentType().equals(1)){
+                smsRent.setExpiredTime(LocalDateTime.now().plusDays(30));
+            }else {
+                smsRent.setExpiredTime(LocalDateTime.now().plusMinutes(20));
+            }
+            smsRentList.add(smsRent);
+        });
+        List<BatchResult> insert = this.baseMapper.insert(smsRentList);
+        this.smsDeviceMapper.clearApplyCode(applyCode);
+        this.smsTemplateMapper.updateReduce(projectCode);
+        SysUser user = userService.getUserByName(username);
+        telegramBot.sendToChats(String.format("[用户:%s] 申请号码 项目:[%s] 数量[%s] 单价[%s] 余额[%s] \n\n 批次号[%s]", username,template.getTemplateCode(),num,onePrice.toPlainString(),user.getBalance().toPlainString(),applyCode));
+
+        return null;
     }
 
 

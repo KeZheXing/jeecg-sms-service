@@ -66,6 +66,11 @@ public class SmsRentController {
         return Result.ok();
     }
 
+    @RequestMapping(value = "/apply-api", method = RequestMethod.POST)
+    public Result<String> applyApi(@RequestBody SmsRent smsRent, HttpServletRequest req) {
+        return iSmsRentService.applyApi(smsRent.getProjectCode(),smsRent.getNum());
+    }
+
     @RequestMapping(value = "/wakeup", method = RequestMethod.POST)
     public Result<String> wakeup(@RequestBody SmsRent smsRent, HttpServletRequest req) {
         return iSmsRentService.wakeup(smsRent.getRentId());
