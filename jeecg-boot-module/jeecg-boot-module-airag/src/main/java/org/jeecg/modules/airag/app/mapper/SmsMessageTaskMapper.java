@@ -25,10 +25,10 @@ public interface SmsMessageTaskMapper extends BaseMapper<SmsMessageTask> {
     SmsMessageTask getWaitTaskByUserName(String userName);
 
     @Update("update sms_message_task set message_status =1,updated_time=now(),handle_time=now() where id =#{id} ")
-    void success(Integer id);
+    void success(Long id);
 
     @Update("update sms_message_task set message_status =2,updated_time=now(),handle_time=now() where id =#{id} ")
-    void failed(Integer id);
+    void failed(Long id);
 
     @Delete("delete from sms_message_task where message_status = 0 and user_name = #{userName} ")
 

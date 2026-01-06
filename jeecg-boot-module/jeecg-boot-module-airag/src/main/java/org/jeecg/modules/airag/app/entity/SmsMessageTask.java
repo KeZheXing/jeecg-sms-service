@@ -32,7 +32,7 @@ public class SmsMessageTask implements Serializable {
      * 设备ID
      */
     @TableId(type = IdType.ASSIGN_ID)
-    private Integer id;
+    private Long id;
 
     /**
      * 设备编号

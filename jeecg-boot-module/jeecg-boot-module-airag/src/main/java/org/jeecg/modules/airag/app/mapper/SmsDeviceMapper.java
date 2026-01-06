@@ -52,7 +52,7 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
     List<SmsDevice> getEnableDevice();
 
     @Update("update sms_device set last_task_id = #{taskId}  where id = #{id} ")
-    void updateLastTaskId(@Param("id") Integer id, @Param("taskId") Integer taskId);
+    void updateLastTaskId(@Param("id") Integer id, @Param("taskId") Long taskId);
 
     @Select("select * from sms_device where device_status = 'Y' and device_channel = '2'")
     List<SmsDevice> getCatDevice();
