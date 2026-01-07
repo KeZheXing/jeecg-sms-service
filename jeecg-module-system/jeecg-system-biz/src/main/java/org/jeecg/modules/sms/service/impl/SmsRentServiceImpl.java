@@ -348,7 +348,7 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
         String slot = split[1];
         String content = new String(Base64.getDecoder().decode(data.get(5).getBytes())).split("\n")[6].replace("-","");
         log.info("收到消息 {} {} {} {}",port,slot,content,username);
-        List<SmsCodeMatchBO> info = this.baseMapper.getRentInfoByWait(port,username);
+        List<SmsCodeMatchBO> info = this.baseMapper.getRentInfoByWait(port,username,slot);
         if (updatePhone(username,port,slot,content)){
             return;
         }

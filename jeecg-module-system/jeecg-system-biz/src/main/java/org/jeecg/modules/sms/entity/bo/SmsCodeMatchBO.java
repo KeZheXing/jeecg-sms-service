@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class SmsCodeMatchBO {
 
-    private Integer rentId;
+    private Long rentId;
 
     private String templateCode;
 
