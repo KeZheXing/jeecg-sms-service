@@ -28,6 +28,7 @@ import org.jeecg.modules.sms.mapper.SmsRentMapper;
 import org.jeecg.modules.sms.mapper.SmsTemplateMapper;
 import org.jeecg.modules.sms.service.ISmsRentService;
 import org.jeecg.modules.sms.utils.NumberToExcelColumn;
+import org.jeecg.modules.sms.utils.SnowFlakeIdGenerator;
 import org.jeecg.modules.system.entity.SysUser;
 import org.jeecg.modules.system.service.ISysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,7 +123,7 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
     }
 
     @Override
-    public Result<String> wakeup(Integer rentId) {
+    public Result<String> wakeup(Long rentId) {
         Integer effect = this.baseMapper.wakeUp(rentId);
         if (effect==1){
             SmsRent smsRent = this.baseMapper.selectById(rentId);
@@ -196,8 +197,10 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
             smsRent.setDeviceId(String.valueOf(device.getId()));
             smsRent.setSlotNum(device.getSlotNum());
             smsRent.setDevicePort(device.getDevicePort());
+            smsRent.setRentId(SnowFlakeIdGenerator.getInstance().nextId());
+            smsRent.setApplyType("link");
             try {
-                buffer.append(device.getPhone()+"----"+"http://44.244.88.77/sms-gateway/sms/rent/code="+ AesEncryptUtil.encrypt(device.getPhone()+"----"+username));
+                buffer.append(device.getPhone()+"----"+"http://44.244.88.77/sms-gateway/smsRentApi/apiGetCode?code="+ AesEncryptUtil.encrypt(String.valueOf(smsRent.getRentId())));
                 buffer.append("\n");
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -205,7 +208,7 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
             if (smsRent.getRentType().equals(1)){
                 smsRent.setExpiredTime(LocalDateTime.now().plusDays(30));
             }else {
-                smsRent.setExpiredTime(LocalDateTime.now().plusMinutes(20));
+                smsRent.setExpiredTime(null);
             }
             smsRentList.add(smsRent);
         });
@@ -215,7 +218,7 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
         SysUser user = userService.getUserByName(username);
         telegramBot.sendToChats(String.format("[用户:%s] 申请号码 项目:[%s] 数量[%s] 单价[%s] 余额[%s] \n\n 批次号[%s]", username,template.getTemplateCode(),num,onePrice.toPlainString(),user.getBalance().toPlainString(),applyCode));
 
-        return null;
+        return Result.ok(buffer.toString());
     }
 
 
@@ -289,7 +292,7 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
 
     @Override
     @Transactional
-    public void blackNum(Integer rendId) {
+    public void blackNum(Long rendId) {
         String username = JwtUtil.getUsername(TokenUtils.getTokenByRequest());
         Set<String> roles = commonAPI.queryUserRoles(username);
         SmsRent getSmsRent = this.baseMapper.selectById(rendId);
@@ -313,7 +316,7 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
     }
 
     @Override
-    public void done(Integer rentId) {
+    public void done(Long rentId) {
         String username = JwtUtil.getUsername(TokenUtils.getTokenByRequest());
         Integer effect = this.baseMapper.done(rentId, username);
         if (effect!=1){
@@ -322,7 +325,7 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
     }
 
     @Override
-    public void removeBlack(Integer rentId) {
+    public void removeBlack(Long rentId) {
         String username = JwtUtil.getUsername(TokenUtils.getTokenByRequest());
         Set<String> roles = commonAPI.queryUserRoles(username);
         if (!(roles != null && roles.contains("admin"))) {

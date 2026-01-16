@@ -65,6 +65,12 @@ public class SmsRentApiController {
     }
 
     @IgnoreAuth
+    @RequestMapping(value = "/apiGetCode", method = RequestMethod.GET)
+    public ResultApi apiGetCode(SmsRent smsRent, HttpServletRequest req) {
+        return iSmsRentService.apiGetCode(smsRent.getCode());
+    }
+
+    @IgnoreAuth
     @RequestMapping(value = "/done", method = RequestMethod.GET)
     public ResultApi done(SmsRent smsRent, HttpServletRequest req) {
         return iSmsRentService.done(smsRent.getRentId(),smsRent.getApiToken());

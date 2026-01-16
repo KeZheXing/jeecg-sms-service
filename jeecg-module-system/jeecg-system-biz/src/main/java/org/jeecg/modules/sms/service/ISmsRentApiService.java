@@ -23,15 +23,17 @@ public interface ISmsRentApiService extends IService<SmsRent> {
 
     ResultApi<JSONObject> apply(String projectCode, String apiToken);
 
-    ResultApi blackNum(Integer rentId, String apiToken);
+    ResultApi blackNum(Long rentId, String apiToken);
 
-    ResultApi done(Integer rentId, String apiToken);
+    ResultApi done(Long rentId, String apiToken);
 
-    void removeBlack(Integer rentId);
+    void removeBlack(Long rentId);
 
     void callbackMC(List<String> data, String username);
 
-    ResultApi getCode(Integer rentId, String apiToken);
+    ResultApi getCode(Long rentId, String apiToken);
 
-    Result<String> wakeup(Integer rentId);
+    Result<String> wakeup(Long rentId);
+
+    ResultApi apiGetCode(String code);
 }

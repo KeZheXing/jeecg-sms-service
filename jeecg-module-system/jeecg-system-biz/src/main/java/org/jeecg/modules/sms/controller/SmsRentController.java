@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
+import org.jeecg.config.shiro.IgnoreAuth;
 import org.jeecg.modules.airag.app.entity.SmsRent;
 import org.jeecg.modules.sms.service.ISmsRentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +67,7 @@ public class SmsRentController {
         return Result.ok();
     }
 
+    @IgnoreAuth
     @RequestMapping(value = "/apply-api", method = RequestMethod.POST)
     public Result<String> applyApi(@RequestBody SmsRent smsRent, HttpServletRequest req) {
         return iSmsRentService.applyApi(smsRent.getProjectCode(),smsRent.getNum());

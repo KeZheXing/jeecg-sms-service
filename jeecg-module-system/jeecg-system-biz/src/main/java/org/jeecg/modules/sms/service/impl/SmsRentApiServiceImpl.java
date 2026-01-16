@@ -14,6 +14,7 @@ import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.api.vo.ResultApi;
 import org.jeecg.common.system.util.JwtUtil;
 import org.jeecg.common.util.TokenUtils;
+import org.jeecg.common.util.encryption.AesEncryptUtil;
 import org.jeecg.modules.airag.app.entity.SmsDevice;
 import org.jeecg.modules.airag.app.entity.SmsPrice;
 import org.jeecg.modules.airag.app.entity.SmsRent;
@@ -169,7 +170,7 @@ public class SmsRentApiServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> i
 
     @Override
     @Transactional
-    public ResultApi blackNum(Integer rendId, String apiToken) {
+    public ResultApi blackNum(Long rendId, String apiToken) {
         String username = checkApiToken(apiToken);
         SmsRent getSmsRent = this.baseMapper.selectById(rendId);
         Integer effect = 0;
@@ -194,7 +195,7 @@ public class SmsRentApiServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> i
     }
 
     @Override
-    public ResultApi done(Integer rentId, String apiToken) {
+    public ResultApi done(Long rentId, String apiToken) {
         String username = checkApiToken(apiToken);
         Integer effect = this.baseMapper.done(rentId, username);
         if (effect!=1){
@@ -208,7 +209,7 @@ public class SmsRentApiServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> i
     }
 
     @Override
-    public void removeBlack(Integer rentId) {
+    public void removeBlack(Long rentId) {
         String username = JwtUtil.getUsername(TokenUtils.getTokenByRequest());
         Integer effect = this.baseMapper.removeBlack(rentId, username);
         if (effect!=1){
@@ -223,7 +224,7 @@ public class SmsRentApiServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> i
     }
 
     @Override
-    public ResultApi getCode(Integer rentId, String apiToken) {
+    public ResultApi getCode(Long rentId, String apiToken) {
         String username = checkApiToken(apiToken);
         SmsRent rent = this.baseMapper.getByRentIdAndUserName(rentId, username);
         if (rent==null){
@@ -231,7 +232,7 @@ public class SmsRentApiServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> i
             error.setStatus("not_found");
             return error;
         }
-        if (rent.getCode()==null){
+        if (rent.getCode()==null  ||rent.getReceiveTime().isBefore(LocalDateTime.now().minusMinutes(10))){
             ResultApi error = ResultApi.error("验证码暂无");
             error.setStatus("pending");
             return error;
@@ -248,7 +249,7 @@ public class SmsRentApiServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> i
 
 
     @Override
-    public Result<String> wakeup(Integer rentId) {
+    public Result<String> wakeup(Long rentId) {
         Integer effect = this.baseMapper.wakeUp(rentId);
         if (effect==1){
             SmsRent smsRent = this.baseMapper.selectById(rentId);
@@ -267,6 +268,67 @@ public class SmsRentApiServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> i
             return Result.error("端口繁忙..预计空闲时间"+busySmsRent.getExpiredTime());
         }
 
+    }
+
+    @Override
+    public ResultApi apiGetCode(String code) {
+        if (code==null){
+            return ResultApi.error("code error");
+        }
+        String rentId = null;
+        try {
+            rentId = AesEncryptUtil.desEncrypt(code);
+        } catch (Exception e) {
+            return ResultApi.error("code error");
+        }
+        SmsRent rent = this.baseMapper.getByRentId(Long.valueOf(rentId));
+        if (rent==null || rent.getRentStatus().equals(7) || rent.getRentStatus().equals(8)){
+            ResultApi<Object> error = ResultApi.error("未找到该租赁 ID 或已返还消费");
+            error.setStatus("not_found");
+            return error;
+        }
+        SmsDevice smsDevice = smsDeviceMapper.getByPhone(rent.getPhone());
+        if (smsDevice == null){
+            this.baseMapper.expiredById(Long.parseLong(rentId));
+            ResultApi<Object> error = ResultApi.error("phone is removed");
+            error.setStatus("expired");
+            return error;
+        }
+
+        if (rent.getCode()==null ||rent.getReceiveTime().isBefore(LocalDateTime.now().minusMinutes(10))){
+            SmsDevice bussinessDevice = this.smsDeviceMapper.isBussiness(smsDevice.getDeviceUserName(),smsDevice.getDeviceId(),smsDevice.getSlotNum());
+            if (bussinessDevice!=null){
+                ResultApi<Object> error = ResultApi.error("port is busy");
+                error.setStatus("busy");
+                return error;
+            }
+            if (smsDevice.getSlotStatus().equals("0/1/1")){
+                this.smsDeviceMapper.active(rentId);
+                log.info("激活卡槽:{} {} ",smsDevice.getDevicePort(),smsDevice.getSlotNum());
+                HttpUtils.doGet(smsDevice.getDeviceOtherInfo().replace("goip_get_sms","goip_send_cmd")+"&op=switch&port="+smsDevice.getDeviceId()+ NumberToExcelColumn.numberToColumn(Integer.parseInt(smsDevice.getSlotNum())));
+                telegramBot.sendToChats(String.format("link_自动激活卡槽 设备端口[%s] 卡槽[%s]", smsDevice.getDevicePort() ,smsDevice.getSlotNum()));
+                ResultApi<Object> error = ResultApi.error("port activating,plz wait a moment");
+                error.setStatus("activating");
+                return error;
+            }else if (smsDevice.getSlotStatus().equals("1/1/1")){
+                this.smsDeviceMapper.active(rentId);
+                ResultApi error = ResultApi.error("验证码暂无");
+                error.setStatus("pending");
+                return error;
+            }else {
+                ResultApi error = ResultApi.error("port error ,Contact the administrator");
+                error.setStatus("error");
+                return error;
+            }
+        }else {
+            ResultApi ok = ResultApi.ok("验证码已到达");
+            ok.setStatus("received");
+            JSONObject jsonObject = new JSONObject();
+            String[] split = rent.getCode().split("\n");
+            jsonObject.put("code", split[split.length-1]);
+            ok.setResult(jsonObject);
+            return ok;
+        }
     }
 
 

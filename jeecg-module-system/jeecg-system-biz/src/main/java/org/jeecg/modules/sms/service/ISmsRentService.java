@@ -20,11 +20,11 @@ public interface ISmsRentService extends IService<SmsRent> {
 
     SmsRent apply(String projectCode);
 
-    void blackNum(Integer rentId);
+    void blackNum(Long rentId);
 
-    void done(Integer rentId);
+    void done(Long rentId);
 
-    void removeBlack(Integer rentId);
+    void removeBlack(Long rentId);
 
     void callbackMC(List<String> data, String username);
 
@@ -32,7 +32,7 @@ public interface ISmsRentService extends IService<SmsRent> {
 
     Result<IPage<SmsRent>> queryBlackAllPageList(HttpServletRequest req, QueryWrapper<SmsRent> queryWrapper, Integer pageSize, Integer pageNo);
 
-    Result<String> wakeup(Integer rentId);
+    Result<String> wakeup(Long rentId);
 
     Result<String> applyApi(String projectCode, Integer num);
 }

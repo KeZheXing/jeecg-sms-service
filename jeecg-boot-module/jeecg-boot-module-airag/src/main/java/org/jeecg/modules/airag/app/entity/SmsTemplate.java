@@ -32,13 +32,13 @@ public class SmsTemplate implements Serializable {
     private Integer rentType;
     private Integer stock;
     @TableField(exist = false)
-    private Integer rentId;
+    private Long rentId;
     private Boolean onlyShort;
     public SmsTemplate(){
 
     }
 
-    public SmsTemplate( Integer rentId,String text, String placeholder, Integer captchaLength, String patternRegex) {
+    public SmsTemplate( Long rentId,String text, String placeholder, Integer captchaLength, String patternRegex) {
         this.rentId = rentId;
         this.templateContent = text;
         this.placeholder = placeholder;

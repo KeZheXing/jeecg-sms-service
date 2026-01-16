@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Accessors(chain = true)
 public class SmsRent implements Serializable {
     @TableId(type = IdType.ASSIGN_ID)
-    private  Integer rentId; // 模板ID
+    private  Long rentId; // 模板ID
     private String phone;
     private String userName;
     private String projectCode;
@@ -41,4 +41,6 @@ public class SmsRent implements Serializable {
     private LocalDateTime wakeupExpireTime;
     @TableField(exist = false)
     private Integer num;
+    private String applyType;
+    private LocalDateTime linkActiveExpireTime;
 }

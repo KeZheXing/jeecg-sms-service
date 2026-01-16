@@ -109,4 +109,17 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
             "join sys_dict_item i on d.id=i.dict_id\n" +
             "where d.dict_name=#{dictName} and i.item_text= #{itemName} limit 1")
     String getDictValue(@Param("dictName") String dictName, @Param("itemName") String itemName);
+
+    @Select("select * from sms_device where phone = #{phone}")
+    SmsDevice getByPhone(String phone);
+
+    @Select("select d.*\n" +
+            "from sms_rent r\n" +
+            "         join sms_device d on r.device_id = d.id\n" +
+            "where d.device_user_name = #{deviceUserName} and d.device_id =#{deviceId} and d.slot_num !=#{slotNum} and ((r.rent_status =0 and r.expired_time>now()) or (r.rent_status =0 and r.link_active_expire_time>now())) \n" +
+            ";\n")
+    SmsDevice isBussiness(@Param("deviceUserName") String deviceUserName,@Param("deviceId") String deviceId,@Param("slotNum") String slotNum);
+
+    @Update("update sms_rent set link_active_expire_time = date_add(now(),interval 5 minute ) where rent_id =#{id} and (link_active_expire_time is null or link_active_expire_time<date_sub(now(),interval  5 minute ))")
+    void active(String id);
 }

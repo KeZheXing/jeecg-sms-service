@@ -38,27 +38,27 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
     SmsRent getByApplyCode(String code);
 
     @Update("update sms_rent set rent_status = 7 ,blacked_time = now() where rent_id = #{rentId} and code is null   and user_name = #{username} and rent_status =0" )
-    Integer blackNum(@Param("rentId") Integer rendId,@Param("username") String username);
+    Integer blackNum(@Param("rentId") Long rendId,@Param("username") String username);
 
 
     @Update("update sms_rent set rent_status = 99 where rent_id = #{rentId}  and user_name = #{username} and rent_status =0 and code is not null")
-    Integer done(@Param("rentId") Integer rendId,@Param("username") String username);
+    Integer done(@Param("rentId") Long rendId,@Param("username") String username);
 
     @Select("select * from sms_rent where rent_id =#{rendId} ")
-    SmsRent getByRentId(Integer rendId);
+    SmsRent getByRentId(Long rendId);
 
     @Delete("delete  from sms_rent where rent_id = #{rentId}  and rent_status  in (7,8)")
-    Integer removeBlack(@Param("rentId") Integer rendId,@Param("username") String username);
+    Integer removeBlack(@Param("rentId") Long rendId,@Param("username") String username);
 
 
     @Delete("delete  from sms_rent where rent_id = #{rentId}  and rent_status  in (7,8)")
-    Integer removeBlackAdmin(@Param("rentId") Integer rendId);
+    Integer removeBlackAdmin(@Param("rentId") Long rendId);
 
     @Select("select * from sms_rent  where rent_status =0 and expired_time <now()")
     List<SmsRent> toBlock();
 
     @Delete("delete from sms_rent where rent_status =8  and rent_id #{rentId}  ")
-    void blackToDel(Integer rentId);
+    void blackToDel(Long rentId);
 
     @Select("select count(1) from sms_rent where user_name = #{username} and project_code = #{templateCode}  and rent_status = 0")
     Integer waitCount(@Param("username") String username, @Param("templateCode") String templateCode);
@@ -93,17 +93,17 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
 
 
     @Select("select * from sms_rent where rent_id = #{rentId}  and user_name =#{username} ")
-    SmsRent getByRentIdAndUserName(@Param("rentId") Integer rentId, @Param("username") String username);
+    SmsRent getByRentIdAndUserName(@Param("rentId") Long rentId, @Param("username") String username);
 
 
     @Update("update sms_rent set expired_time = date_add(expired_time,interval  30 day ) where rent_id = #{rentId} and user_name =#{username} and rent_status in (97,98,99) limit 1")
-    Integer addTime(@Param("rentId") Integer rentId, @Param("username") String username);
+    Integer addTime(@Param("rentId") Long rentId, @Param("username") String username);
 
     @Select("select * from sms_rent  where rent_status in (7,8) and expired_time < date_sub(now(),interval 12 hour)")
     List<SmsRent> toBlock2();
 
     @Update("update sms_rent set rent_status = 8 where rent_id = #{rentId} and rent_status =0 ")
-    void updateToBlack(Integer rentId);
+    void updateToBlack(Long rentId);
 
     @Select("select user_name,project_code as 'templateCode',(select template_name from sms_template t where t.template_code = r.project_code limit 1) as 'templateName',count(1) as statisticsCount,SUM(r.price) as 'statisticsCost',r.price as 'statisticsPrice'" +
             ", DATE(#{todayStart}) as 'statisticsDay'" +
@@ -112,7 +112,7 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
     List<SysStatisticsCost> getStatisticsCost(@Param("todayStart") Date todayStart, @Param("todayEnd") Date todayEnd);
 
     @Update("update sms_rent set rent_status = 7 ,blacked_time = now() where rent_id = #{rentId} and code is null  and rent_status =0")
-    Integer blackNumNotUser(Integer rendId);
+    Integer blackNumNotUser(Long rendId);
 
     @Update("UPDATE sms_rent r\n" +
             "SET r.rent_status        = 98,\n" +
@@ -125,7 +125,7 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
             "                  WHERE r2.device_port = r.device_port\n" +
             "                    AND r2.rent_status IN (0, 98)\n" +
             "                    AND r.slot_num != r2.slot_num) a);")
-    Integer wakeUp(Integer rentId);
+    Integer wakeUp(Long rentId);
 
     @Select("select * from sms_rent where device_port = #{devicePort} and rent_status in (98,0) limit 1")
     SmsRent getBusyNum(String devicePort);
@@ -145,9 +145,11 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
 
 
     @Update("update sms_rent set rent_status = 97 where rent_status = 99 and rent_id =#{rentId} ")
-    void waitWakeUp(Integer rentId);
+    void waitWakeUp(Long rentId);
 
     @Update("update sms_rent set rent_status = 7 ,blacked_time = now() where rent_id = #{rentId}  and user_name = #{username} and rent_status in (0,99)" )
-    Integer blackNumNab(@Param("rentId") Integer rendId,@Param("username") String username);
+    Integer blackNumNab(@Param("rentId") Long rendId,@Param("username") String username);
 
+    @Update("update sms_rent set expired_time = now() where rent_id = #{rentId} ")
+    void expiredById(long rentId);
 }
