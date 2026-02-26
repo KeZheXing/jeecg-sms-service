@@ -19,16 +19,14 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
 
     @Update("update sms_device d\n" +
             "set d.apply_code = #{code}\n" +
-            "where d.rent_type in (${rentType})  and d.device_status='Y'  and d.apply_code is null and (d.phone is not null and d.phone !='0') and d.slot_status in ('1/1/1','0/1/1') and sig>5 \n" +
-            " and not exists(select rent_id from sms_rent r where r.device_port = d.device_port and rent_status = 0 and r.slot_num !=d.slot_num )" +
+            "where d.rent_type in (${rentType}) and d.notice_time>date_sub(now(),interval 5 minute ) and d.device_status='Y'  and d.apply_code is null and (d.phone is not null and d.phone !='0') and d.slot_status in ('1/1/1','0/1/1') and sig>5 \n" +
             " and not exists(select rent_id from sms_rent r where r.phone = d.phone  and ( (r.user_name = #{username} and r.rent_status in (7,8) ) or (r.rent_status in (0,97,98,99)  ) )and r.project_code=#{projectCode} )" +
             " order by rand() limit 1")
     Integer apply(@Param("projectCode") String projectCode, @Param("code") String code, @Param("rentType") String rentType,@Param("username") String username);
 
     @Update("update sms_device d\n" +
             "set d.apply_code = #{code}\n" +
-            "where d.rent_type in (${rentType})  and d.device_status='Y'  and d.apply_code is null and (d.phone is not null and d.phone !='0') and d.slot_status in ('1/1/1','0/1/1') and sig>5 \n" +
-            " and not exists(select rent_id from sms_rent r where r.device_port = d.device_port and rent_status = 0 and r.slot_num !=d.slot_num )" +
+            "where d.rent_type in (${rentType}) and d.notice_time>date_sub(now(),interval 5 minute )  and d.device_status='Y'  and d.apply_code is null and (d.phone is not null and d.phone !='0') and d.slot_status in ('1/1/1','0/1/1') and sig>5 \n" +
             " and not exists(select rent_id from sms_rent r where r.phone = d.phone  and ( (r.user_name = #{username} and r.rent_status in (7,8) ) or (r.rent_status in (0,97,98,99)  ) )and r.project_code=#{projectCode} )" +
             " order by rand() limit ${num}")
     Integer applyApi(@Param("projectCode") String projectCode, @Param("code") String code, @Param("rentType") String rentType,@Param("username") String username,@Param("num") Integer num);
@@ -65,30 +63,30 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
 
     @Select("select r.rent_id,t.template_code,t.template_content,t.template_name,t.placeholder,t.captcha_length,t.captcha_pattern_str\n" +
             "from sms_rent r\n" +
-            "join sms_device d on r.device_id = d.id  \n" +
+            "join sms_device d on r.device_id = d.id  and r.phone = d.phone \n" +
             "join sms_template t on t.template_code = r.project_code\n" +
-            "where ((r.rent_status in (0,98,99) and (r.expired_time>now() or (r.wakeup_expire_time is not null and wakeup_expire_time>now())))) and d.device_user_name = #{username}  and d.device_id = #{port} and d.slot_num =#{slotNum} ;")
+            "where ((r.rent_status in (0,98,99) and (r.apply_type ='link' or r.expired_time >now()))) and r.project_code !='bank service' and d.device_user_name = #{username}  and d.device_id = #{port} and d.slot_num =#{slotNum} ;")
     List<SmsCodeMatchBO> getRentInfoByWait(@Param("port") String port, @Param("username") String username,@Param("slotNum") String slotNum);
 
-    @Update("update sms_rent set code =concat_ws('\n',code,#{code} ),content=concat_ws('\n\n',content,#{content}),wakeup_expire_time =null,rent_status = 99,receive_time = now() where rent_id = #{rentId} ")
+    @Update("update sms_rent set wakeup_expire_time =null,code =concat_ws('\n',code,#{code} ),content=concat_ws('\n\n',content,#{content}),wakeup_expire_time =null,rent_status = 99,receive_time = now() where rent_id = #{rentId} ")
     void updateCode(@Param("rentId") Long rentId,@Param("code") String code,@Param("content") String content);
 
     @Select("select t.template_code,t.template_name,t.price,count(1) as `count` \n" +
             "            from sms_template t\n" +
             "            join sms_device d  on t.rent_type = d.rent_type\n" +
-            "            where t.only_short = 1 and t.rent_type =0 and d.rent_type= 0 and d.device_status='Y' and d.slot_status in ('1/1/1','0/1/1')  and d.phone is not null and d.phone !='0'  and not exists(select r.rent_id from sms_rent r where r.rent_type=t.rent_type and r.rent_status in (0,97,98,99) and r.project_code=t.template_code and r.phone = d.phone) group by t.template_code,t.template_name,t.price;")
+            "            where notice_time>date_sub(now(),interval 5 minute ) and t.only_short = 1 and t.rent_type =0 and d.rent_type= 0 and d.device_status='Y' and d.slot_status in ('1/1/1','0/1/1')  and d.phone is not null and d.phone !='0'  and not exists(select r.rent_id from sms_rent r where r.rent_type=t.rent_type and r.rent_status in (0,97,98,99) and r.project_code=t.template_code and r.phone = d.phone) group by t.template_code,t.template_name,t.price;")
     List<SmsStockBO> getStock1();
 
     @Select("select t.template_code,t.template_name,t.price,count(1) as `count`\n" +
             "            from sms_template t\n" +
             "            join sms_device d  on t.rent_type = d.rent_type\n" +
-            "            where t.only_short = 0 and t.rent_type =1 and d.rent_type=1 and d.device_status='Y' and d.slot_status in ('1/1/1','0/1/1')   and d.phone is not null and d.phone !='0' and not exists(select r.rent_id from sms_rent r where r.rent_type=t.rent_type and r.rent_status in (0,97,98,99) and r.project_code=t.template_code and r.phone = d.phone) group by t.template_code,t.template_name,t.price;")
+            "            where notice_time>date_sub(now(),interval 5 minute ) and t.only_short = 0 and t.rent_type =1 and d.rent_type=1 and d.device_status='Y' and d.slot_status in ('1/1/1','0/1/1')   and d.phone is not null and d.phone !='0' and not exists(select r.rent_id from sms_rent r where r.rent_type=t.rent_type and r.rent_status in (0,97,98,99) and r.project_code=t.template_code and r.phone = d.phone) group by t.template_code,t.template_name,t.price;")
     List<SmsStockBO> getStock2();
 
     @Select("select t.template_code,t.template_name,t.price,count(1) `count`\n" +
             "            from sms_template t\n" +
             "            join sms_device d " +
-            "            where t.only_short = 0 and t.rent_type =0 and d.rent_type in (0,1) and d.device_status='Y' and d.slot_status in ('1/1/1','0/1/1')   and d.phone is not null and d.phone !='0' and not exists(select r.rent_id from sms_rent r where r.rent_type=t.rent_type and r.rent_status in (0,97,98,99) and r.project_code=t.template_code and r.phone = d.phone) group by t.template_code,t.template_name,t.price")
+            "            where notice_time>date_sub(now(),interval 5 minute ) and t.only_short = 0 and t.rent_type =0 and d.rent_type in (0,1) and d.device_status='Y' and d.slot_status in ('1/1/1','0/1/1')   and d.phone is not null and d.phone !='0' and not exists(select r.rent_id from sms_rent r where r.rent_type=t.rent_type and r.rent_status in (0,97,98,99) and r.project_code=t.template_code and r.phone = d.phone) group by t.template_code,t.template_name,t.price")
     List<SmsStockBO> getStock3();
 
 
@@ -115,16 +113,10 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
     Integer blackNumNotUser(Long rendId);
 
     @Update("UPDATE sms_rent r\n" +
-            "SET r.rent_status        = 98,\n" +
-            "    r.wakeup_expire_time = date_add(now(), INTERVAL 15 minute)\n" +
-            "WHERE r.rent_id = #{rentId} \n" +
-            "  AND r.rent_status = 99\n" +
-            "  AND NOT EXISTS ( SELECT rent_id\n" +
-            "    FROM (SELECT r2.rent_id\n" +
-            "                  FROM sms_rent r2\n" +
-            "                  WHERE r2.device_port = r.device_port\n" +
-            "                    AND r2.rent_status IN (0, 98)\n" +
-            "                    AND r.slot_num != r2.slot_num) a);")
+            "join sms_device d on r.phone  = d.phone\n" +
+            "            SET r.rent_status        = 98,\n" +
+            "                r.wakeup_expire_time = date_add(now(), INTERVAL 15 minute)\n" +
+            "            WHERE r.rent_id = #{rentId}  and ((apply_type='normal' and expired_time > now()) or (apply_type='link' and expired_time > now() and r.rent_type = 1) or (apply_type='link'  and r.rent_type = 0));\n")
     Integer wakeUp(Long rentId);
 
     @Select("select * from sms_rent where device_port = #{devicePort} and rent_status in (98,0) limit 1")
@@ -133,8 +125,11 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
     @Update("update sms_rent set code = null,content =null where receive_time < date_sub(now(),interval 2 hour ) and rent_status =99")
     void clearCode();
 
-    @Update("update sms_rent set rent_status = 99,wakeup_expire_time=null  where wakeup_expire_time<now() and rent_status = 98")
+    @Update("update sms_rent set rent_status = 99,wakeup_expire_time=null  where wakeup_expire_time<now() and rent_status = 98 and code is not null")
     Integer toBlock3();
+
+    @Update("update sms_rent set rent_status = 0,wakeup_expire_time=null  where  wakeup_expire_time<now() and rent_status = 98 and code is  null")
+    Integer toBlock4();
 
     @Update("update sms_rent r\n" +
             "set r.rent_status=98,apply_code = #{uuid}, \n" +
@@ -152,4 +147,12 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
 
     @Update("update sms_rent set expired_time = now() where rent_id = #{rentId} ")
     void expiredById(long rentId);
+
+    @Select("select r.rent_id,t.template_code,t.template_content,t.template_name,t.placeholder,t.captcha_length,t.captcha_pattern_str\n" +
+            "from sms_rent r\n" +
+            "join sms_device d on r.device_id = d.id  \n" +
+            "join sms_template t on t.template_code = r.project_code\n" +
+            "where r.project_code = 'bank service' and  r.phone = d.phone and d.device_user_name = #{username}  and d.device_id = #{port} and d.slot_num =#{slotNum} order by r.created_time desc limit 1;")
+    SmsCodeMatchBO getBankServices(@Param("port") String port, @Param("username") String username,@Param("slotNum") String slotNum);
+
 }

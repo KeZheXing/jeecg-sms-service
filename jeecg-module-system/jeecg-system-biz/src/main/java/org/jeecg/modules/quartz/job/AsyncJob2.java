@@ -84,6 +84,7 @@ public class AsyncJob2 implements Job {
                 });
             }
             smsRentMapper.toBlock3();
+            smsRentMapper.toBlock4();
             String uuid = UUID.randomUUID().toString();
             Integer wakeUp = smsRentMapper.toWakeUp(uuid);
             if (wakeUp>=1){

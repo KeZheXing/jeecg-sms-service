@@ -20,7 +20,7 @@ public class SmsTemplate implements Serializable {
     private  Integer id; // 模板ID
     private  String templateContent; // 模板完整文本（如"您的验证码是xxxxxx，5分钟内有效"）
     private  String placeholder; // 验证码占位符（如"xxxxxx"）
-    private  Integer captchaLength; // 验证码固定长度（简化匹配，也可支持范围）
+    private  String captchaLength; // 验证码固定长度（简化匹配，也可支持范围）
     private String  captchaPatternStr;
     @TableField(exist = false)
     private Pattern captchaPattern; // 验证码格式正则（如数字）
@@ -38,7 +38,7 @@ public class SmsTemplate implements Serializable {
 
     }
 
-    public SmsTemplate( Long rentId,String text, String placeholder, Integer captchaLength, String patternRegex) {
+    public SmsTemplate( Long rentId,String text, String placeholder, String captchaLength, String patternRegex) {
         this.rentId = rentId;
         this.templateContent = text;
         this.placeholder = placeholder;

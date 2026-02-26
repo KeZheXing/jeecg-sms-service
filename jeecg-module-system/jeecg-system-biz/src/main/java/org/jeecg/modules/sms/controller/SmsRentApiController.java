@@ -66,7 +66,7 @@ public class SmsRentApiController {
 
     @IgnoreAuth
     @RequestMapping(value = "/apiGetCode", method = RequestMethod.GET)
-    public ResultApi apiGetCode(SmsRent smsRent, HttpServletRequest req) {
+    public String apiGetCode(SmsRent smsRent, HttpServletRequest req) {
         return iSmsRentService.apiGetCode(smsRent.getCode());
     }
 

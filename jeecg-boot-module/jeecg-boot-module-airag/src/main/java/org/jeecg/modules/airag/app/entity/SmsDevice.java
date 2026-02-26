@@ -13,6 +13,7 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * <p>
@@ -107,4 +108,6 @@ public class SmsDevice implements Serializable {
 
     @TableField(exist = false)
     private Boolean hasPhone;
+
+    private LocalDateTime wakeupTime;
 }

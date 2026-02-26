@@ -110,7 +110,7 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
             "where d.dict_name=#{dictName} and i.item_text= #{itemName} limit 1")
     String getDictValue(@Param("dictName") String dictName, @Param("itemName") String itemName);
 
-    @Select("select * from sms_device where phone = #{phone}")
+    @Select("select * from sms_device where phone = #{phone} limit 1")
     SmsDevice getByPhone(String phone);
 
     @Select("select d.*\n" +
@@ -122,4 +122,22 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
 
     @Update("update sms_rent set link_active_expire_time = date_add(now(),interval 5 minute ) where rent_id =#{id} and (link_active_expire_time is null or link_active_expire_time<date_sub(now(),interval  5 minute ))")
     void active(String id);
+
+    @Update("update sms_device set phone = null,sig=null,port_status=0 WHERE notice_time<DATE_SUB(NOW(),interval 2 minute ) and device_user_name = #{username}")
+    void clearByNoticeTime(String username);
+
+    @Select("select d.*\n" +
+            "from sms_rent r\n" +
+            "join sms_device d on r.phone = d.phone\n" +
+            "where\n" +
+            "    d.notice_time>date_sub(now(),interval 5 minute ) and d.slot_status in ('1/1/1','0/1/1')\n" +
+            "\n" +
+            "        and\n" +
+            "                  ((rent_status in (0,98,99) and apply_type='link' and wakeup_expire_time>now())\n" +
+            "or\n" +
+            "                  (rent_status in (0,98,99) and apply_type='normal' and expired_time>now() and wakeup_expire_time>now()))")
+    List<SmsDevice> getNeedActivePhone();
+
+    @Update("update sms_device set wakeup_time = now() where id=#{id} ")
+    void wakeUp(Integer id);
 }

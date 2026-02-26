@@ -35,5 +35,5 @@ public interface ISmsRentApiService extends IService<SmsRent> {
 
     Result<String> wakeup(Long rentId);
 
-    ResultApi apiGetCode(String code);
+    String apiGetCode(String code);
 }

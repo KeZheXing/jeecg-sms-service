@@ -117,6 +117,9 @@ public class DeviceServiceImpl extends ServiceImpl<SmsDeviceMapper, SmsDevice> i
                 this.baseMapper.clearPhone(username,port);
             }
         });
+        if (status.size()>10){
+            this.baseMapper.clearByNoticeTime(username);
+        }
     }
 
     public static void main(String[] args) {

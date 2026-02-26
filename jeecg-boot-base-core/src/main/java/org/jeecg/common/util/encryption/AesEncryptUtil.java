@@ -107,18 +107,8 @@ public class AesEncryptUtil {
 //    /**
 //     * 测试
 //     */
-//    public static void main(String args[]) throws Exception {
-//        String test1 = "sa";
-//        String test =new String(test1.getBytes(),"UTF-8");
-//        String data = null;
-//        String key =  KEY;
-//        String iv = IV;
-//        // /g2wzfqvMOeazgtsUVbq1kmJawROa6mcRAzwG1/GeJ4=
-//        data = encrypt(test, key, iv);
-//        System.out.println("数据："+test);
-//        System.out.println("加密："+data);
-//        String jiemi =desEncrypt(data, key, iv).trim();
-//        System.out.println("解密："+jiemi);
-//    }
+    public static void main(String args[]) throws Exception {
+        System.out.println(desEncrypt("mVeTmIjWfg6jDyr+q5gomz61BARZI/lefhx3y5otYBU="));
+    }
 
 }
