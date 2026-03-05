@@ -114,11 +114,27 @@ public class DeviceController {
     }
 
     @IgnoreAuth
-//    @RequestMapping(value = "/callback/yp", method = RequestMethod.POST)
+    @RequestMapping(value = "/callback/yp", method = RequestMethod.POST)
     public Result<?> callback(@RequestBody JSONObject jsonObject) {
         log.info("sms callback : {}", jsonObject);
         SmsCallbackRequest smsCallbackRequest = jsonObject.toJavaObject(SmsCallbackRequest.class);
         userService.callback(smsCallbackRequest);
+        return Result.ok();
+    }
+
+    @IgnoreAuth
+    @RequestMapping(value = "/f", method = RequestMethod.POST)
+    public Result<?> f(@RequestBody JSONObject jsonObject) {
+        Result<?> result = new Result<SmsDevice>();
+        log.info("sms f : {}", jsonObject);
+        return Result.ok();
+    }
+
+    @IgnoreAuth
+    @RequestMapping(value = "/f2", method = RequestMethod.POST)
+    public Result<?> f(Map<String,String> jsonObject) {
+        Result<?> result = new Result<SmsDevice>();
+        log.info("sms f2 : {}", jsonObject);
         return Result.ok();
     }
 
