@@ -86,7 +86,7 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
     @Update("update sms_template set stock =0 where update_batch is null or update_batch<> #{uuid} ")
     void clearStock(String uuid);
 
-    @Update("update sms_device set phone = null ,need_active=true , phone_update_time = now() where device_user_name = #{userName} and device_id = #{port} ")
+    @Update("update sms_device set phone = null ,need_active=true ,  phone_update_time = now() where device_user_name = #{userName} and device_channel =0 and device_id = #{port} ")
     void clearPhone(@Param("userName") String userName,@Param("port") String port);
 
     @Insert("insert into sms_device (device_code,device_id,slot_status,port_status,sig,device_user_name,device_password,slot_num,device_port,device_other_info) values (#{deviceCode}  ,#{port} ,#{soltStatus} ,#{st} ,#{sig} ,#{username} ,#{username},#{slotNum},#{devicePort},#{deviceOtherInfo}  )")
@@ -94,7 +94,7 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
 
     @Select("select d.id,d.device_other_info,d.device_port,d.device_user_name,d.device_id,d.slot_num\n" +
             "from sms_device d\n" +
-            "where d.slot_status in ('0/1/1') and notice_time>date_sub(now(),interval 5 minute ) and  not exists(select r.rent_id from sms_rent r where r.device_port = d.device_port and r.rent_status=0) and d.device_status='Y' and phone is null and d.need_active=true  \n")
+            "where d.slot_status in ('0/1/1') and notice_time>date_sub(now(),interval 5 minute ) and device_channel=0 and  not exists(select r.rent_id from sms_rent r where r.device_port = d.device_port and r.rent_status=0) and d.device_status='Y' and phone is null and d.need_active=true  \n")
     List<SmsDevice> needUpdatePhoneList();
 
     @Update("update sms_device set need_active = false where id = #{id}")
@@ -130,7 +130,7 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
             "from sms_rent r\n" +
             "join sms_device d on r.phone = d.phone\n" +
             "where\n" +
-            "    d.notice_time>date_sub(now(),interval 5 minute ) and d.slot_status in ('1/1/1','0/1/1')\n" +
+            "    d.notice_time>date_sub(now(),interval 5 minute )  and device_channel = 0 and d.slot_status in ('1/1/1','0/1/1')\n" +
             "\n" +
             "        and\n" +
             "                  ((rent_status in (0,98,99) and apply_type='link' and wakeup_expire_time>now())\n" +

@@ -361,8 +361,9 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
                 String templateContent = e.getTemplateContent();
                 String[] split2 = templateContent.split(";");
                 for (String temp : split2) {
-                    if (hasIntersection(content.get().toLowerCase(),temp.toLowerCase())) {
+                    if (hasIntersection(content.get().toLowerCase(),temp.toLowerCase())&&!match.get()) {
                         match.set(true);
+                        log.info("匹配关键字："+temp.toLowerCase());
                         String[] split1 = e.getCaptchaLength().split("-");
                         int minLength = Integer.parseInt(split1[0]);
                         int maxLength = Integer.parseInt(split1.length != 1 ? split1[1] : split1[0]);
@@ -400,8 +401,62 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
         } else {
             telegramBot.sendToChats("孤儿消息2:" + content);
         }
+    }
 
 
+    @Override
+    public void callbackMC2(List<String> data, String username) {
+
+        String from = data.get(0);
+        log.info("收到消息 {} {} {}", data.get(0), data.get(1), username);
+        telegramBot.sendToChats(String.format("收到消息: %s %s %s", data.get(0), data.get(1), username));
+        List<SmsCodeMatchBO> info = this.baseMapper.getRentInfoByWait(username, username, username);
+        AtomicReference<String> content = new AtomicReference<>("[" + from + "]" + data.get(1));
+        AtomicReference<Boolean> match = new AtomicReference<>(false);
+        if (!CollectionUtil.isEmpty(info)&&!hasIntersection(content.get().toLowerCase(),"bank")) {
+            info.forEach(e -> {
+                String templateContent = e.getTemplateContent();
+                String[] split2 = templateContent.split(";");
+                for (String temp : split2) {
+                    if (hasIntersection(content.get().toLowerCase(),temp.toLowerCase())) {
+                        match.set(true);
+                        String[] split1 = e.getCaptchaLength().split("-");
+                        int minLength = Integer.parseInt(split1[0]);
+                        int maxLength = Integer.parseInt(split1.length != 1 ? split1[1] : split1[0]);
+                        String captcha = extractDigitsByLength(content.get().replace("-", ""), minLength, maxLength);
+                        if (captcha.length() <= maxLength && captcha.length() >= minLength) {
+                            content.set(DateUtils.now() + "|" + content);
+                            this.baseMapper.updateCode(e.getRentId(), captcha, content.get());
+                        }
+                    }
+                }
+            });
+        }
+        if (match.get()){
+            return;
+        }
+        List<SmsTemplate> smsTemplates = smsTemplateMapper.selectList(new QueryWrapper<>());
+        Boolean noMatch = smsTemplates.stream().noneMatch(e -> {
+            String templateContent = e.getTemplateContent();
+            String[] split1 = templateContent.split(";");
+            for (String temp : split1) {
+                if (hasIntersection(content.get().toLowerCase(),temp.toLowerCase())) {
+                    return true;
+                }
+            }
+            return false;
+        });
+        if (noMatch||hasIntersection(content.get().toLowerCase(),"bank")) {
+            SmsCodeMatchBO bankServices = this.baseMapper.getBankServices(username, username, username);
+            if (bankServices != null) {
+                content.set(DateUtils.now() + "|" + content);
+                this.baseMapper.updateCode(bankServices.getRentId(), "自行提取", content.get());
+            } else {
+                telegramBot.sendToChats("孤儿消息:" + content);
+            }
+        } else {
+            telegramBot.sendToChats("孤儿消息2:" + content);
+        }
     }
 
     public static boolean hasIntersection(String str1, String str2) {

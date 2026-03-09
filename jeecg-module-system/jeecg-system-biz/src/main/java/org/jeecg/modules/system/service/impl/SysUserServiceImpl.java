@@ -2476,8 +2476,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 		SmsDevice device = deviceMapper.getByDeviceCode(split[3]);
 		SysUser user = this.baseMapper.getUserByName(username);
 		boolean result =false;
-		List<ConversationMessageRecords> lastTask = conversationMessageRecordsMapper.getLastTask(device.getDeviceCode());
-		if (lastTask.stream().filter(e -> e.getMessageStatus().equals(0)).count() >= 3) {
+//		List<ConversationMessageRecords> lastTask = conversationMessageRecordsMapper.getLastTask(device.getDeviceCode());
+		Object incr1 = redisUtil.get(device.getDeviceCode());
+		if (incr1!=null &&(long)incr1 >= 3) {
 			log.info("设备暂停");
 			chatSendParams.setFailed(true);
 			chatSendParams.setFailedReason(String.format("设备[%s]已离线",device.getDeviceCode() ));

@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -127,6 +128,10 @@ public class DeviceController {
     public Result<?> f(@RequestBody JSONObject jsonObject) {
         Result<?> result = new Result<SmsDevice>();
         log.info("sms f : {}", jsonObject);
+        ArrayList<String> list = new ArrayList<>();
+        list.add(jsonObject.getString("from"));
+        list.add(jsonObject.getString("sms"));
+        rentService.callbackMC2(list,jsonObject.getString("slot").split("_")[1]);
         return Result.ok();
     }
 
@@ -161,6 +166,10 @@ public class DeviceController {
         Result<SmsDevice> result = new Result<SmsDevice>();
         try {
             SmsDevice device = JSON.parseObject(jsonObject.toJSONString(), SmsDevice.class);
+            if (device.getDeviceChannel().equals("1")){
+                device.setSlotNum(device.getDeviceUserName());
+                device.setDevicePort(device.getDeviceUserName());
+            }
             deviceService.save(device);
             result.success("添加成功！");
         } catch (Exception e) {
@@ -175,6 +184,10 @@ public class DeviceController {
         Result<SmsDevice> result = new Result<SmsDevice>();
         try {
             SmsDevice device = JSON.parseObject(jsonObject.toJSONString(), SmsDevice.class);
+            if (device.getDeviceChannel().equals("1")){
+                device.setSlotNum(device.getDeviceUserName());
+                device.setDevicePort(device.getDeviceUserName());
+            }
             deviceService.updateById(device);
             result.success("添加成功！");
         } catch (Exception e) {

@@ -19,14 +19,14 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
 
     @Update("update sms_device d\n" +
             "set d.apply_code = #{code}\n" +
-            "where d.rent_type in (${rentType}) and d.notice_time>date_sub(now(),interval 5 minute ) and d.device_status='Y'  and d.apply_code is null and (d.phone is not null and d.phone !='0') and d.slot_status in ('1/1/1','0/1/1') and sig>5 \n" +
+            "where d.rent_type in (${rentType}) and (d.notice_time>date_sub(now(),interval 5 minute ) or device_channel = 1) and d.device_status='Y'  and d.apply_code is null and (d.phone is not null and d.phone !='0') and (d.slot_status in ('1/1/1','0/1/1') or d.device_channel =1) and (sig>5 or d.device_channel =1 ) \n" +
             " and not exists(select rent_id from sms_rent r where r.phone = d.phone  and ( (r.user_name = #{username} and r.rent_status in (7,8) ) or (r.rent_status in (0,97,98,99)  ) )and r.project_code=#{projectCode} )" +
             " order by rand() limit 1")
     Integer apply(@Param("projectCode") String projectCode, @Param("code") String code, @Param("rentType") String rentType,@Param("username") String username);
 
     @Update("update sms_device d\n" +
             "set d.apply_code = #{code}\n" +
-            "where d.rent_type in (${rentType}) and d.notice_time>date_sub(now(),interval 5 minute )  and d.device_status='Y'  and d.apply_code is null and (d.phone is not null and d.phone !='0') and d.slot_status in ('1/1/1','0/1/1') and sig>5 \n" +
+            "where d.rent_type in (${rentType}) and (d.notice_time>date_sub(now(),interval 5 minute ) or device_channel = 1)  and d.device_status='Y'  and d.apply_code is null and (d.phone is not null and d.phone !='0') and (d.slot_status in ('1/1/1','0/1/1') or d.device_channel =1) and (sig>5 or d.device_channel =1 )  \n" +
             " and not exists(select rent_id from sms_rent r where r.phone = d.phone  and ( (r.user_name = #{username} and r.rent_status in (7,8) ) or (r.rent_status in (0,97,98,99)  ) )and r.project_code=#{projectCode} )" +
             " order by rand() limit ${num}")
     Integer applyApi(@Param("projectCode") String projectCode, @Param("code") String code, @Param("rentType") String rentType,@Param("username") String username,@Param("num") Integer num);
@@ -68,25 +68,26 @@ public interface SmsRentMapper extends BaseMapper<SmsRent> {
             "where ((r.rent_status in (0,98,99) and (r.apply_type ='link' or r.expired_time >now()))) and r.project_code !='bank service' and d.device_user_name = #{username}  and d.device_id = #{port} and d.slot_num =#{slotNum} ;")
     List<SmsCodeMatchBO> getRentInfoByWait(@Param("port") String port, @Param("username") String username,@Param("slotNum") String slotNum);
 
+
     @Update("update sms_rent set wakeup_expire_time =null,code =concat_ws('\n',code,#{code} ),content=concat_ws('\n\n',content,#{content}),wakeup_expire_time =null,rent_status = 99,receive_time = now() where rent_id = #{rentId} ")
     void updateCode(@Param("rentId") Long rentId,@Param("code") String code,@Param("content") String content);
 
     @Select("select t.template_code,t.template_name,t.price,count(1) as `count` \n" +
             "            from sms_template t\n" +
             "            join sms_device d  on t.rent_type = d.rent_type\n" +
-            "            where notice_time>date_sub(now(),interval 5 minute ) and t.only_short = 1 and t.rent_type =0 and d.rent_type= 0 and d.device_status='Y' and d.slot_status in ('1/1/1','0/1/1')  and d.phone is not null and d.phone !='0'  and not exists(select r.rent_id from sms_rent r where r.rent_type=t.rent_type and r.rent_status in (0,97,98,99) and r.project_code=t.template_code and r.phone = d.phone) group by t.template_code,t.template_name,t.price;")
+            "            where (notice_time>date_sub(now(),interval 5 minute ) or device_channel = 1 )and t.only_short = 1 and t.rent_type =0 and d.rent_type= 0 and d.device_status='Y' and (d.slot_status in ('1/1/1','0/1/1') or d.device_channel =1)   and d.phone is not null and d.phone !='0'  and not exists(select r.rent_id from sms_rent r where r.rent_type=t.rent_type and r.rent_status in (0,97,98,99) and r.project_code=t.template_code and r.phone = d.phone) group by t.template_code,t.template_name,t.price;")
     List<SmsStockBO> getStock1();
 
     @Select("select t.template_code,t.template_name,t.price,count(1) as `count`\n" +
             "            from sms_template t\n" +
             "            join sms_device d  on t.rent_type = d.rent_type\n" +
-            "            where notice_time>date_sub(now(),interval 5 minute ) and t.only_short = 0 and t.rent_type =1 and d.rent_type=1 and d.device_status='Y' and d.slot_status in ('1/1/1','0/1/1')   and d.phone is not null and d.phone !='0' and not exists(select r.rent_id from sms_rent r where r.rent_type=t.rent_type and r.rent_status in (0,97,98,99) and r.project_code=t.template_code and r.phone = d.phone) group by t.template_code,t.template_name,t.price;")
+            "            where (notice_time>date_sub(now(),interval 5 minute ) or device_channel = 1 )and t.only_short = 0 and t.rent_type =1 and d.rent_type=1 and d.device_status='Y' and (d.slot_status in ('1/1/1','0/1/1') or d.device_channel =1)    and d.phone is not null and d.phone !='0' and not exists(select r.rent_id from sms_rent r where r.rent_type=t.rent_type and r.rent_status in (0,97,98,99) and r.project_code=t.template_code and r.phone = d.phone) group by t.template_code,t.template_name,t.price;")
     List<SmsStockBO> getStock2();
 
     @Select("select t.template_code,t.template_name,t.price,count(1) `count`\n" +
             "            from sms_template t\n" +
             "            join sms_device d " +
-            "            where notice_time>date_sub(now(),interval 5 minute ) and t.only_short = 0 and t.rent_type =0 and d.rent_type in (0,1) and d.device_status='Y' and d.slot_status in ('1/1/1','0/1/1')   and d.phone is not null and d.phone !='0' and not exists(select r.rent_id from sms_rent r where r.rent_type=t.rent_type and r.rent_status in (0,97,98,99) and r.project_code=t.template_code and r.phone = d.phone) group by t.template_code,t.template_name,t.price")
+            "            where (notice_time>date_sub(now(),interval 5 minute ) or device_channel = 1 )and t.only_short = 0 and t.rent_type =0 and d.rent_type in (0,1) and d.device_status='Y' and (d.slot_status in ('1/1/1','0/1/1') or d.device_channel =1)    and d.phone is not null and d.phone !='0' and not exists(select r.rent_id from sms_rent r where r.rent_type=t.rent_type and r.rent_status in (0,97,98,99) and r.project_code=t.template_code and r.phone = d.phone) group by t.template_code,t.template_name,t.price")
     List<SmsStockBO> getStock3();
 
 

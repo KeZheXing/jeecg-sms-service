@@ -28,6 +28,8 @@ public interface ISmsRentService extends IService<SmsRent> {
 
     void callbackMC(List<String> data, String username);
 
+    void callbackMC2(List<String> data, String username);
+
     Result<Boolean> addTime(SmsRent smsRent);
 
     Result<IPage<SmsRent>> queryBlackAllPageList(HttpServletRequest req, QueryWrapper<SmsRent> queryWrapper, Integer pageSize, Integer pageNo);
