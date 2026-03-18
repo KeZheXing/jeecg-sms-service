@@ -24,6 +24,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.http.CacheControl;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -33,6 +34,11 @@ import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import javax.annotation.Resource;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,6 +46,8 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.io.IOException;
+import org.jeecg.common.util.TokenUtils;
 
 /**
  * Spring Boot 2.0 解决跨域问题
@@ -139,6 +147,26 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
         javaTimeModule.addDeserializer(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm:ss")));
         objectMapper.registerModule(javaTimeModule);
         return objectMapper;
+    }
+
+    @Bean
+    public FilterRegistrationBean tokenThreadLocalClearFilter() {
+        FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new Filter() {
+            @Override
+            public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+                try {
+                    TokenUtils.tempUser.remove();
+                    chain.doFilter(request, response);
+                } finally {
+                    TokenUtils.tempUser.remove();
+                }
+            }
+        });
+        registration.setName("tokenThreadLocalClearFilter");
+        registration.addUrlPatterns("/*");
+        registration.setOrder(0);
+        return registration;
     }
 
     //update-begin---author:chenrui ---date:20240514  for：[QQYUN-9247]系统监控功能优化------------

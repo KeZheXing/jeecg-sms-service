@@ -140,4 +140,7 @@ public interface SmsDeviceMapper extends BaseMapper<SmsDevice> {
 
     @Update("update sms_device set wakeup_time = now() where id=#{id} ")
     void wakeUp(Integer id);
+
+    @Update("update sms_device set phone = #{phone} where device_code = #{deviceCode} ")
+    void updatePhoneByDeviceCode(@Param("phone") String phone, @Param("deviceCode") String deviceCode);
 }

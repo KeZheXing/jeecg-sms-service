@@ -136,6 +136,26 @@ public class DeviceController {
     }
 
     @IgnoreAuth
+    @RequestMapping(value = "/smsforward-cb", method = RequestMethod.POST)
+    public Result<?> smsforwardCb(@RequestBody JSONObject jsonObject) {
+        Result<?> result = new Result<SmsDevice>();
+        log.info("sms f : {}", jsonObject);
+        ArrayList<String> list = new ArrayList<>();
+        list.add(jsonObject.getString("from"));
+        list.add(jsonObject.getString("sms"));
+        rentService.callbackMC2(list,jsonObject.getString("slot"));
+        return Result.ok();
+    }
+
+    @IgnoreAuth
+    @RequestMapping(value = "/smsforward-upd-phone", method = RequestMethod.POST)
+    public Result<?> smsforwardUpdPhone(@RequestBody JSONObject jsonObject) {
+        deviceService.smsforwardUpdPhone(jsonObject);
+        return Result.ok();
+    }
+
+
+    @IgnoreAuth
     @RequestMapping(value = "/f2", method = RequestMethod.POST)
     public Result<?> f(Map<String,String> jsonObject) {
         Result<?> result = new Result<SmsDevice>();

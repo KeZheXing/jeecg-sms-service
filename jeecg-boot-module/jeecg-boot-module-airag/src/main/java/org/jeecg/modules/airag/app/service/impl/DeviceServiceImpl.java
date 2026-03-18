@@ -1,6 +1,7 @@
 package org.jeecg.modules.airag.app.service.impl;
 
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -119,6 +120,25 @@ public class DeviceServiceImpl extends ServiceImpl<SmsDeviceMapper, SmsDevice> i
         });
         if (status.size()>10){
             this.baseMapper.clearByNoticeTime(username);
+        }
+    }
+
+    @Override
+    public void smsforwardUpdPhone(JSONObject jsonObject) {
+        String deviceCode = jsonObject.getString("deviceCode");
+        SmsDevice device = this.baseMapper.getByDeviceCode(deviceCode);
+        if (device == null){
+            SmsDevice device1 = new SmsDevice();
+            device1.setDeviceCode(deviceCode);
+            device1.setDeviceId(deviceCode);
+            device1.setDeviceUserName(deviceCode);
+            device1.setSlotNum(deviceCode);
+            device1.setDevicePort(deviceCode);
+            device1.setDeviceChannel("1");
+            device1.setPhone(jsonObject.getString("phone"));
+            this.save(device1);
+        }else {
+            this.baseMapper.updatePhoneByDeviceCode(jsonObject.getString("phone"),jsonObject.getString("deviceCode"));
         }
     }
 

@@ -1,6 +1,7 @@
 package org.jeecg.modules.airag.app.service;
 
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -29,4 +30,5 @@ public interface IDeviceService extends IService<SmsDevice> {
 
     void callbackMCStatus(String username, List<MCPortStatusRequest> status);
 
+    void smsforwardUpdPhone(JSONObject jsonObject);
 }
