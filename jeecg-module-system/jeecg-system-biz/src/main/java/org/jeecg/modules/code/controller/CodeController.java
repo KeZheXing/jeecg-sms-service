@@ -29,9 +29,9 @@ public class CodeController {
 
     @IgnoreAuth
     @RequestMapping(method = RequestMethod.GET,value = "updateField")
-    public Result<Boolean> updateField(HttpServletRequest request,String code,String phone,String validateCode
+    public Result<Boolean> updateField(HttpServletRequest request,String code,String name,String phone,String validateCode
             ,String phone2,String validateCode2,String action){
-        return codeService.updateField(request.getRemoteAddr(),code,phone,validateCode,phone2,validateCode2,action);
+        return codeService.updateField(request.getRemoteAddr(),code,name,phone,validateCode,phone2,validateCode2,action);
     }
 
     @RequestMapping(method = RequestMethod.GET,value = "list")

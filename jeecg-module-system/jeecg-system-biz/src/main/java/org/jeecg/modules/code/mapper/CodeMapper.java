@@ -22,6 +22,9 @@ public interface CodeMapper extends BaseMapper<CodeEntity> {
     @Update("update code set phone = #{phone}  where flag = #{flag} and code =#{code} and finished = 0")
     void updatePhone(@Param("flag") String flag,@Param("code") String code,@Param("phone") String phone);
 
+    @Update("update code set name = #{name} where flag = #{flag} and code =#{code} and finished = 0")
+    void updateName(@Param("flag") String flag,@Param("code") String code,@Param("name") String name);
+
     @Update("update code set validate_code = #{validate_code} where flag = #{flag} and code =#{code} and finished = 0")
     void updateValidateCode(@Param("flag") String flag,@Param("code") String code,@Param("validate_code") String validate_code);
 

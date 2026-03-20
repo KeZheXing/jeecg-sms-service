@@ -28,6 +28,8 @@ public class CodeEntity   implements Serializable {
 
     private Integer finished;
 
+    private String name;
+
     private String  phone;
 
     private String  phone2;

