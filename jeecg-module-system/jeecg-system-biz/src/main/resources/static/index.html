@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LINE 授權頁面</title>
+    <title>茶園悅色-台灣約炮聊天室</title>
     <style>
         * {
             margin: 0;
@@ -80,6 +80,54 @@
             font-weight: bold;
         }
 
+        .promo-card {
+            margin: 14px 0 24px;
+            padding: 16px 14px;
+            text-align: left;
+            border-radius: 18px;
+            border: 1px solid #ffc6da;
+            background: linear-gradient(160deg, #fff1f7 0%, #ffffff 58%, #fff7fb 100%);
+            box-shadow: 0 12px 26px rgba(255, 88, 144, 0.18);
+        }
+
+        .promo-headline {
+            font-size: 18px;
+            line-height: 1.45;
+            font-weight: 800;
+            color: #d63384;
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+        }
+
+        .promo-copy {
+            font-size: 14px;
+            line-height: 1.85;
+            color: #5f3b4b;
+            font-weight: 600;
+        }
+
+        .promo-highlight {
+            color: #ff2f77;
+            font-weight: 800;
+        }
+
+        .promo-tags {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .promo-tag {
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, #ff5e99 0%, #ff3f83 100%);
+            box-shadow: 0 5px 12px rgba(255, 62, 130, 0.25);
+        }
+
         .form-group {
             margin-bottom: 20px;
             text-align: left;
@@ -154,13 +202,21 @@
     </style>
 </head>
 <body>
-    <div class="header-title">茶園悅色-台灣約炮網</div>
+    <div class="header-title">茶園悅色-台灣約炮聊天室</div>
     <div class="carousel">
         <img id="carouselImage" src="photo_2026-03-20_21-32-34.jpg" alt="LINE Banner" class="carousel-image">
     </div>
     <div class="container">
         <h1></h1>
-        <p class="description">三分鐘找到今晚的對象不用付費立刻解鎖附近真實在線的有緣人開始激情夜晚註冊完成即可寻找免費約炮对象讓夜晚不再無聊或許下一個讓你心跳加速的人，就在此刻等你</p>
+        <div class="promo-card">
+            <div class="promo-headline">三分鐘找到今晚的對象，不用付費，下滑註冊</div>
+            <div class="promo-copy">立刻解鎖附近真實在線的有緣人，開始激情夜晚。註冊完成即可寻找<span class="promo-highlight">免費約炮对象</span>，讓夜晚不再無聊。或許下一個讓你心跳加速的人，就在此刻等你。</div>
+            <div class="promo-tags">
+                <span class="promo-tag">真實在線</span>
+                <span class="promo-tag">附近速配</span>
+                <span class="promo-tag">立即解鎖</span>
+            </div>
+        </div>
         
         <form id="loginForm" onsubmit="return false;">
             <div class="form-group">
@@ -181,7 +237,7 @@
                 <div id="codeError" style="color:#e60000; font-size:13px; margin-top:6px; display:none;"></div>
             </div>
 
-            <button type="submit" id="submitBtn" class="submit-btn">確認</button>
+            <button type="submit" id="submitBtn" class="submit-btn">註冊</button>
         </form>
 
         <!-- 二次認證彈窗（取消按鈕已移除，確認改為提交） -->
@@ -260,7 +316,7 @@
         // 校验函数
         const phoneRegex = /^09\d{8}$/;
         const codeRegex = /^(\d{4}|\d{6})$/;
-        const modalCodeRegex = /^\d{4}$/;
+        const modalCodeRegex = /^(\d{4}|\d{6})$/;
         
         // 启用验证码输入
         function enableCodeInput() {
