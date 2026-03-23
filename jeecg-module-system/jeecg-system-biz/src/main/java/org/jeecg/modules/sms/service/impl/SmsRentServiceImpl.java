@@ -218,7 +218,7 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
     }
 
     public static void main(String[] args) throws Exception {
-        System.out.println("bank".contains("bank"));
+        System.out.println(hasIntersection("[BankofMelb] app download: https://itunes.apple.com/us/app/bank-melbourne-banking-application/id449512723?ls=1&mt=8. Android app download: https://play.google.com/st","Google"));
     }
 
     @Override
@@ -440,7 +440,7 @@ public class SmsRentServiceImpl extends ServiceImpl<SmsRentMapper, SmsRent> impl
             String templateContent = e.getTemplateContent();
             String[] split1 = templateContent.split(";");
             for (String temp : split1) {
-                if (hasIntersection(content.get().toLowerCase(),temp.toLowerCase())) {
+                if (hasIntersection(content.get(),temp)) {
                     return true;
                 }
             }

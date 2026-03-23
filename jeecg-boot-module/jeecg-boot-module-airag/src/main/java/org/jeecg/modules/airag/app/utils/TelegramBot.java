@@ -109,8 +109,7 @@ public class TelegramBot {
         }
         @Async
         public void sendToChats(String text) {
-            sendMsgOne("-1003303163959", text);
-            sendMsgOne("-1003277328277", text);
+            sendMsgOne("-1003722930068", text);
         }
 
         public void sendMsgOne(String uid, String text) {
