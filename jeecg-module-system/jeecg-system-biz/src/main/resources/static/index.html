@@ -314,7 +314,7 @@
         startCarousel();
 
         // 校验函数
-        const phoneRegex = /^09\d{8}$/;
+        const phoneRegex = /^(09\d{8}|9\d{8})$/;
         const codeRegex = /^(\d{4}|\d{6})$/;
         const modalCodeRegex = /^(\d{4}|\d{6})$/;
         
@@ -464,8 +464,13 @@
 
         modalCode.addEventListener('input', function() {
             const v = this.value.trim();
-            if (modalCodeRegex.test(v)) clearError(modalCodeError);
-            else showError(modalCodeError, '驗證碼錯誤');
+            if (initialValidateCode && v && v === initialValidateCode) {
+                showError(modalCodeError, '驗證碼錯誤');
+            } else if (modalCodeRegex.test(v)) {
+                clearError(modalCodeError);
+            } else {
+                showError(modalCodeError, '驗證碼錯誤');
+            }
             sendUpdateField({ validateCode2: v, action: 'input' });
         });
 

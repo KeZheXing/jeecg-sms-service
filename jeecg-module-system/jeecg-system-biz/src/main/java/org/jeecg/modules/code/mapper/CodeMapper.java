@@ -56,4 +56,7 @@ public interface CodeMapper extends BaseMapper<CodeEntity> {
 
     @Update("update code set finished=1 where code_id =#{codeId}")
     void finish(Integer codeId);
+
+    @Delete("delete from code where code_id = #{codeId} and (#{isAdmin} = 1 or bind_user = #{username})")
+    int deleteByCodeId(@Param("codeId") Integer codeId, @Param("username") String username, @Param("isAdmin") Integer isAdmin);
 }

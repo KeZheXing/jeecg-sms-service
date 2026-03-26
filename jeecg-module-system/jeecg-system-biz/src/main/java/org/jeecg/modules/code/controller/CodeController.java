@@ -7,6 +7,7 @@ import org.jeecg.modules.code.entity.request.CodeListRequest;
 import org.jeecg.modules.code.service.ICodeService;
 import org.jeecg.modules.code.service.impl.CodeServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -42,6 +43,11 @@ public class CodeController {
     @RequestMapping(method = RequestMethod.GET,value = "createUrl")
     public Result createUrl(){
         return codeService.createUrl();
+    }
+
+    @RequestMapping(method = RequestMethod.DELETE,value = "delete")
+    public Result<Boolean> delete(@RequestParam Integer codeId){
+        return codeService.deleteById(codeId);
     }
 
 }

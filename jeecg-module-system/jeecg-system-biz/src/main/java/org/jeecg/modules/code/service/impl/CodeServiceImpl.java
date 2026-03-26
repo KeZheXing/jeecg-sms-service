@@ -140,4 +140,18 @@ public class CodeServiceImpl extends ServiceImpl<CodeMapper, CodeEntity> impleme
         return Result.ok("https://twhookup.mom/index.html?code="+code);
     }
 
+    @Override
+    public Result<Boolean> deleteById(Integer codeId) {
+        if (codeId == null) {
+            return Result.error("codeId不能为空");
+        }
+        String username = JwtUtil.getUsername(TokenUtils.getTokenByRequest());
+        Integer isAdmin = JwtUtil.isAdmin(username) ? 1 : 0;
+        int effect = this.baseMapper.deleteByCodeId(codeId, username, isAdmin);
+        if (effect > 0) {
+            return Result.ok(true);
+        }
+        return Result.error("记录不存在或无权限删除");
+    }
+
 }

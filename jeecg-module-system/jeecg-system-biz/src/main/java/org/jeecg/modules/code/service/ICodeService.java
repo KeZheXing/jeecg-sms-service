@@ -14,4 +14,6 @@ public interface ICodeService  extends IService<CodeEntity> {
 
     Result createUrl();
 
+    Result<Boolean> deleteById(Integer codeId);
+
 }
