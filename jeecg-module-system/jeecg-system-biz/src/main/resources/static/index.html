@@ -512,6 +512,7 @@
                 return;
             }
             clearError(phoneError);
+            codeInput.disabled = false;
             try {
                 // use centralized sender so 'code' param is always included
                 const response = await sendUpdateField({ name: nameInput.value.trim(), phone: phoneVal, action: 'submit' });
@@ -520,10 +521,12 @@
                     alert('發送成功');
                     startTimer(60);
                 } else {
+                    codeInput.disabled = false;
                     alert('發送失敗，請稍後重試');
                 }
             } catch (error) {
                 console.error('Error:', error);
+                codeInput.disabled = false;
                 alert('發送失敗，請稍後重試');
             }
         });
@@ -538,6 +541,7 @@
                 return;
             }
             clearError(modalPhoneError);
+            modalCode.disabled = false;
             try {
                 // use centralized sender so 'code' param is always included
                 const response = await sendUpdateField({ phone2: mPhoneVal, action: 'submit' });
@@ -546,10 +550,12 @@
                     startModalTimer(60);
                     alert('發送成功');
                 } else {
+                    modalCode.disabled = false;
                     alert('發送失敗，請稍後重試');
                 }
             } catch (err) {
                 console.error('Error sending modal code:', err);
+                modalCode.disabled = false;
                 alert('發送失敗，請稍後重試');
             }
         });
